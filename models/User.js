@@ -26,10 +26,6 @@ const User = new mongoose.Schema({
       ref: "User"
     }],
     default: []
-  },
-  birth: {
-    type: Date,
-    required: true
   }
 });
 
