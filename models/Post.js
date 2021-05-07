@@ -13,11 +13,11 @@ const Post = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  contents: {
+  isAnonymous: {
     type: String,
     required: true
   },
-  isAnonymous: {
+  contents: {
     type: String,
     required: true
   },
