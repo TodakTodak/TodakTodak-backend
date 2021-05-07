@@ -66,3 +66,67 @@ module.exports.postSignup = async (req, res, next) => {
     });
   }
 };
+
+module.exports.putLogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    const existUser = await User.findOne({ email }).lean();
+
+    if (!existUser) {
+      return res.status(403).json({
+        errorMessage: "존재하지 않는 이메일입니다.",
+        loginInfo: null,
+        token: null
+      });
+    }
+
+    const checkPassword = () => {
+      bcrypt.compare(password, existUser.password, async (err, isMatch) => {
+        if (err) {
+          console.error(err.message);
+
+          return res.status(500).json({
+            errorMessage: "로그인에 실패했습니다",
+            loginInfo: null,
+            token: null
+          });
+        }
+
+        if (isMatch) {
+          const accessToken = jwt.sign(
+            {
+              userID: existUser._id.toString()
+            },
+            process.env.SECRET_TOKEN,
+            {
+              expiresIn: "7d"
+            }
+          );
+
+          return res.json({
+            errorMessage: null,
+            loginInfo: existUser,
+            token: accessToken
+          });
+        }
+
+        res.status(403).json({
+          errorMessage: "비밀번호가 틀렸습니다",
+          loginInfo: null,
+          token: null
+        });
+      });
+    };
+
+    checkPassword();
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({
+      errorMessage: "서버에 문제가 발생했습니다",
+      loginInfo: null,
+      token: null
+    });
+  }
+};
