@@ -37,16 +37,47 @@ module.exports.postWorryPost = async (req, res, next) => {
       category
     });
 
-    currentUser.post.push(newPost._id);
+    currentUser.posts.push(newPost._id);
 
     await currentUser.save();
 
     res.json({ errorMessage: null });
-  } catch (error) {
+  } catch (err) {
     console.error(err.message);
 
     res.status(500).json({
       errorMessage: "서버에 문제가 발생했습니다"
+    });
+  }
+};
+
+module.exports.getMyPosts = async (req, res, next) => {
+  try {
+    const { userEmail } = req.params;
+
+    User.findOne({ email: userEmail })
+      .populate("posts")
+      .exec((err, user) => {
+        if (err) {
+          console.error(err.message);
+
+          return res.status(500).json({
+            errorMessage: "게시물을 가져오는데 실패했습니다",
+            posts: null
+          });
+        }
+
+        res.json({
+          errorMessage: null,
+          postsInfo: user.posts,
+        });
+      });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).json({
+      errorMessage: "게시물을 가져오는데 실패했습니다",
+      posts: null
     });
   }
 };
