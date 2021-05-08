@@ -31,6 +31,7 @@ module.exports.postWorryPost = async (req, res, next) => {
     const newPost = await Post.create({
       title: postTitle,
       owner: currentUser._id,
+      ownerNickname: currentUser.nickname,
       isPublic,
       isAnonymous,
       contents: worryContents,
@@ -78,6 +79,35 @@ module.exports.getMyPosts = async (req, res, next) => {
     return res.status(500).json({
       errorMessage: "게시물을 가져오는데 실패했습니다",
       posts: null
+    });
+  }
+};
+
+module.exports.getCategoryPost = async (req, res, next) => {
+  try {
+    const { category } = req.params;
+
+    const categoryPosts = await Post.aggregate(
+      [
+        {
+          $match: { "category": category }
+        },
+        {
+          $match: { "isPublic": true }
+        }
+      ]
+    );
+
+    res.json({
+      errorMessage: null,
+      categoryPosts: categoryPosts
+    });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).json({
+      errorMessage: "게시물을 가져오는데 실패했습니다",
+      categoryPosts: null
     });
   }
 };
