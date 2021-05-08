@@ -21,16 +21,16 @@ const Post = new mongoose.Schema({
     type: String,
     required: true
   },
-  catagory: {
+  category: {
     type: String,
     enum: [
-      "love",
-      "course",
-      "employment",
-      "friend",
-      "pain"
+      "사랑",
+      "진로",
+      "취업",
+      "친구",
+      "고통"
     ],
-    default: "love"
+    default: "사랑"
   },
   createdAt: {
     type: Date,
