@@ -98,16 +98,28 @@ module.exports.getCategoryPost = async (req, res, next) => {
       ]
     );
 
+    const sortPostLikes = (prev, next) => {
+      if (prev.likes.length > next.likes.length) {
+        return -1;
+      }
+
+      return 1;
+    };
+
+    const bestPost = categoryPosts.sort(sortPostLikes)[0];
+
     res.json({
+      categoryPosts: categoryPosts,
       errorMessage: null,
-      categoryPosts: categoryPosts
+      highestLikesPost: bestPost
     });
   } catch (err) {
     console.error(err.message);
 
     return res.status(500).json({
+      categoryPosts: null,
       errorMessage: "게시물을 가져오는데 실패했습니다",
-      categoryPosts: null
+      highestLikesPost: null
     });
   }
 };
