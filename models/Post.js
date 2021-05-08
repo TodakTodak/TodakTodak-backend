@@ -9,12 +9,16 @@ const Post = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "User"
   },
+  ownerNickname: {
+    type: String,
+    required: true
+  },
   isPublic: {
     type: Boolean,
-    default: true
+    required: true
   },
   isAnonymous: {
-    type: String,
+    type: Boolean,
     required: true
   },
   contents: {
