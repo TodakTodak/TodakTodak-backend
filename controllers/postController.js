@@ -39,7 +39,6 @@ module.exports.postWorryPost = async (req, res, next) => {
     });
 
     currentUser.posts.push(newPost._id);
-
     await currentUser.save();
 
     res.json({ errorMessage: null });
@@ -68,10 +67,25 @@ module.exports.getMyPosts = async (req, res, next) => {
           });
         }
 
-        res.json({
-          errorMessage: null,
-          postsInfo: user.posts,
-        });
+        Post.populate(
+          user.posts,
+          { path: "comments" },
+          (err, populatedPost) => {
+            if (err) {
+              console.error(err.message);
+
+              return res.status(500).json({
+                errorMessage: "게시물을 가져오는데 실패했습니다",
+                posts: null
+              });
+            }
+
+            res.json({
+              errorMessage: null,
+              postsInfo: populatedPost
+            });
+          }
+        )
       });
   } catch (err) {
     console.error(err.message);
@@ -87,39 +101,62 @@ module.exports.getCategoryPost = async (req, res, next) => {
   try {
     const { category } = req.params;
 
-    const categoryPosts = await Post.aggregate(
-      [
-        {
-          $match: { "category": category }
-        },
-        {
-          $match: { "isPublic": true }
+    await Post
+      .aggregate(
+        [
+          {
+            $match: { "category": category }
+          },
+          {
+            $match: { "isPublic": true }
+          }
+        ]
+      ).exec((err, posts) => {
+        if (err) {
+          return res.status(500).json({
+            categoryPosts: null,
+            highestLikesPost: null,
+            errorMessage: "게시물을 가져오는데 실패했습니다"
+          });
         }
-      ]
-    );
 
-    const sortPostLikes = (prev, next) => {
-      if (prev.likes.length > next.likes.length) {
-        return -1;
-      }
+        Post.populate(
+          posts,
+          { path: "comments" },
+          (err, populatedPosts) => {
+            if (err) {
+              return res.status(500).json({
+                categoryPosts: null,
+                highestLikesPost: null,
+                errorMessage: "게시물을 가져오는데 실패했습니다"
+              });
+            }
 
-      return 1;
-    };
+            const sortPostLikes = (prev, next) => {
+              if (prev.likes.length > next.likes.length) {
+                return -1;
+              }
 
-    const bestPost = categoryPosts.sort(sortPostLikes)[0];
+              return 1;
+            };
 
-    res.json({
-      categoryPosts: categoryPosts,
-      errorMessage: null,
-      highestLikesPost: bestPost
-    });
+            const bestPost = populatedPosts.sort(sortPostLikes)[0];
+
+            res.json({
+              errorMessage: null,
+              highestLikesPost: bestPost,
+              categoryPosts: populatedPosts
+            });
+          }
+        );
+      });
   } catch (err) {
     console.error(err.message);
 
     return res.status(500).json({
       categoryPosts: null,
-      errorMessage: "게시물을 가져오는데 실패했습니다",
-      highestLikesPost: null
+      highestLikesPost: null,
+      errorMessage: "게시물을 가져오는데 실패했습니다"
     });
   }
 };
