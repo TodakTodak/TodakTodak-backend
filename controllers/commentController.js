@@ -7,10 +7,10 @@ module.exports.postComment = async (req, res, next) => {
     const { user, postId, content } = req.body;
 
     const currentPost = await Post.findById(postId);
-    const currentUser = await User.findOne({ email: user.email }).lean();
     const newComment = await Comment.create({
       content,
-      user: currentUser._id
+      post: postId,
+      user: user.email
     });
 
     currentPost.comments.push(newComment._id);
@@ -20,6 +20,53 @@ module.exports.postComment = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 없습니다." });
+    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+  }
+};
+
+module.exports.getComments = async (req, res, next) => {
+  try {
+    const { userEmail } = req.params;
+
+    await Comment
+      .aggregate(
+        [
+          {
+            $match: { "user": userEmail }
+          }
+        ]
+      ).exec((err, comments) => {
+        if (err) {
+          return res.status(500).json({
+            errorMessage: "서버에 문제가 있습니다.",
+            comments: null
+          });
+        }
+
+        Comment.populate(
+          comments,
+          { path: "post" },
+          (err, populatedComments) => {
+            if (err) {
+              return res.status(500).json({
+                errorMessage: "서버에 문제가 있습니다.",
+                comments: null
+              });
+            }
+
+            res.json({
+              errorMessage: null,
+              commentsInfo: populatedComments
+            });
+          }
+        );
+      });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({
+      errorMessage: "서버에 문제가 있습니다.",
+      comments: null
+    });
   }
 };
