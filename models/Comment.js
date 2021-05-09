@@ -6,8 +6,12 @@ const Comment = new mongoose.Schema({
     required: true
   },
   user: {
+    type: String,
+    required: true
+  },
+  post: {
     type: mongoose.Types.ObjectId,
-    ref: "User"
+    ref: "Post"
   },
   createdAt: {
     type: Date,
