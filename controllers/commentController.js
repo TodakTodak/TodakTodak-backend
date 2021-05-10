@@ -1,6 +1,5 @@
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
-const User = require("../models/User");
 
 module.exports.postComment = async (req, res, next) => {
   try {
@@ -54,10 +53,23 @@ module.exports.getComments = async (req, res, next) => {
               });
             }
 
-            res.json({
-              errorMessage: null,
-              commentsInfo: populatedComments
-            });
+            Comment.populate(
+              populatedComments,
+              { path: "post.comments" },
+              (err, populatedPostComments) => {
+                if (err) {
+                  return res.status(500).json({
+                    errorMessage: "서버에 문제가 있습니다.",
+                    comments: null
+                  });
+                }
+
+                res.json({
+                  errorMessage: null,
+                  commentsInfo: populatedPostComments
+                });
+              }
+            );
           }
         );
       });

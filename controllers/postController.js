@@ -27,7 +27,6 @@ module.exports.postWorryPost = async (req, res, next) => {
     }
 
     const currentUser = await User.findOne({ email });
-
     const newPost = await Post.create({
       title: postTitle,
       owner: currentUser._id,
@@ -157,6 +156,36 @@ module.exports.getCategoryPost = async (req, res, next) => {
       categoryPosts: null,
       highestLikesPost: null,
       errorMessage: "게시물을 가져오는데 실패했습니다"
+    });
+  }
+};
+
+module.exports.patchPostLike = async (req, res, next) => {
+  try {
+    const { user, postId } = req.body;
+
+    const targetPost = await Post.findById(postId);
+    let targetPostLikes = targetPost.likes;
+    const isLikedUser = targetPostLikes.includes(user);
+
+    if (isLikedUser) {
+      const removeIndex = targetPostLikes.indexOf(user);
+
+      targetPostLikes.splice(removeIndex, 1);
+    } else {
+      targetPostLikes.push(user);
+    }
+
+    await targetPost.updateOne({
+      "$set": { "likes": targetPostLikes }
+    });
+
+    res.json({ errorMessage: null });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).json({
+      errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요"
     });
   }
 };
