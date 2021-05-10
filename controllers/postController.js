@@ -1,5 +1,6 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
+const Comment = require("../models/Comment");
 
 module.exports.postWorryPost = async (req, res, next) => {
   try {
@@ -184,8 +185,97 @@ module.exports.patchPostLike = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return res.status(500).json({
+    res.status(500).json({
       errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요"
+    });
+  }
+};
+
+module.exports.patchPostCommentLike = async (req, res, next) => {
+  try {
+    const { user, postId, commentId } = req.body;
+
+    const targetUser = await User.findOne({ email: user });
+    const targetComment = await Comment.findById(commentId);
+    let commentLikeList = targetComment.likes;
+    const isLikedUser = commentLikeList.includes(targetUser._id);
+
+    if (isLikedUser) {
+      const removeIndex = commentLikeList.indexOf(targetUser._id);
+
+      commentLikeList.splice(removeIndex, 1);
+    } else {
+      commentLikeList.push(targetUser._id);
+    }
+
+    await targetComment.updateOne({
+      "$set": { "likes": commentLikeList }
+    });
+
+    Post.findById(postId)
+      .populate("comments")
+      .exec((err, post) => {
+        if (err) {
+          console.error(err.message);
+
+          return res.status(500).json({
+            errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
+            postComments: null
+          });
+        }
+
+        res.json({
+          errorMessage: null,
+          postComments: post.comments
+        });
+      });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({
+      errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
+      postComments: null
+    });
+  }
+};
+
+module.exports.patchPostComments = async (req, res, next) => {
+  try {
+    const { user, postId, content } = req.body;
+
+    const currentPost = await Post.findById(postId);
+    const newComment = await Comment.create({
+      content,
+      post: postId,
+      user: user.email
+    });
+
+    currentPost.comments.push(newComment._id);
+    await currentPost.save();
+
+    Post.findById(postId)
+    .populate("comments")
+    .exec((err, post) => {
+      if (err) {
+        console.error(err.message);
+
+        return res.status(500).json({
+          errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
+          postComments: null
+        });
+      }
+
+      res.json({
+        errorMessage: null,
+        postComments: post.comments
+      });
+    });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({
+      errorMessage: "서버에 문제가 있습니다.",
+      postComments: null
     });
   }
 };
