@@ -55,38 +55,13 @@ module.exports.getMyPosts = async (req, res, next) => {
   try {
     const { userEmail } = req.params;
 
-    User.findOne({ email: userEmail })
-      .populate("posts")
-      .exec((err, user) => {
-        if (err) {
-          console.error(err.message);
+    const populatedUser = await User.findOne({ email: userEmail }).populate("posts");
+    const populatedPost = await Post.populate(populatedUser.posts, { path: "comments" });
 
-          return res.status(500).json({
-            errorMessage: "게시물을 가져오는데 실패했습니다",
-            posts: null
-          });
-        }
-
-        Post.populate(
-          user.posts,
-          { path: "comments" },
-          (err, populatedPost) => {
-            if (err) {
-              console.error(err.message);
-
-              return res.status(500).json({
-                errorMessage: "게시물을 가져오는데 실패했습니다",
-                posts: null
-              });
-            }
-
-            res.json({
-              errorMessage: null,
-              postsInfo: populatedPost
-            });
-          }
-        )
-      });
+    res.json({
+      errorMessage: null,
+      postsInfo: populatedPost
+    });
   } catch (err) {
     console.error(err.message);
 
@@ -100,8 +75,36 @@ module.exports.getMyPosts = async (req, res, next) => {
 module.exports.getCategoryPost = async (req, res, next) => {
   try {
     const { category } = req.params;
+    const { page } = req.headers;
+    const limit = 5;
+    let bestPost;
 
-    await Post
+    if (page === "0") {
+      const filteredPost = await Post
+        .aggregate(
+          [
+            {
+              $match: { "category": category }
+            },
+            {
+              $match: { "isPublic": true }
+            }
+          ]
+        );
+      const populatedPosts = await Post.populate(filteredPost, { path: "comments" });
+
+      const sortPostLikes = (prev, next) => {
+        if (prev.likes.length > next.likes.length) {
+          return -1;
+        }
+
+        return 1;
+      };
+
+      bestPost = populatedPosts.sort(sortPostLikes)[0];
+    }
+
+    const filteredPost = await Post
       .aggregate(
         [
           {
@@ -109,46 +112,21 @@ module.exports.getCategoryPost = async (req, res, next) => {
           },
           {
             $match: { "isPublic": true }
+          },
+          {
+            $skip: limit * page
+          },
+          {
+            $limit: limit
           }
         ]
-      ).exec((err, posts) => {
-        if (err) {
-          return res.status(500).json({
-            categoryPosts: null,
-            highestLikesPost: null,
-            errorMessage: "게시물을 가져오는데 실패했습니다"
-          });
-        }
+      );
+      const populatedPosts = await Post.populate(filteredPost, { path: "comments" });
 
-        Post.populate(
-          posts,
-          { path: "comments" },
-          (err, populatedPosts) => {
-            if (err) {
-              return res.status(500).json({
-                categoryPosts: null,
-                highestLikesPost: null,
-                errorMessage: "게시물을 가져오는데 실패했습니다"
-              });
-            }
-
-            const sortPostLikes = (prev, next) => {
-              if (prev.likes.length > next.likes.length) {
-                return -1;
-              }
-
-              return 1;
-            };
-
-            const bestPost = populatedPosts.sort(sortPostLikes)[0];
-
-            res.json({
-              errorMessage: null,
-              highestLikesPost: bestPost,
-              categoryPosts: populatedPosts
-            });
-          }
-        );
+      res.json({
+        errorMessage: null,
+        highestLikesPost: bestPost,
+        categoryPosts: populatedPosts
       });
   } catch (err) {
     console.error(err.message);
@@ -212,23 +190,12 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
       "$set": { "likes": commentLikeList }
     });
 
-    Post.findById(postId)
-      .populate("comments")
-      .exec((err, post) => {
-        if (err) {
-          console.error(err.message);
+    const populatedPost = await Post.findById(postId).populate("comments");
 
-          return res.status(500).json({
-            errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
-            postComments: null
-          });
-        }
-
-        res.json({
-          errorMessage: null,
-          postComments: post.comments
-        });
-      });
+    res.json({
+      errorMessage: null,
+      postComments: populatedPost.comments
+    });
   } catch (err) {
     console.error(err.message);
 
@@ -253,22 +220,11 @@ module.exports.patchPostComments = async (req, res, next) => {
     currentPost.comments.push(newComment._id);
     await currentPost.save();
 
-    Post.findById(postId)
-    .populate("comments")
-    .exec((err, post) => {
-      if (err) {
-        console.error(err.message);
+    const populatedPost = await Post.findById(postId).populate("comments");
 
-        return res.status(500).json({
-          errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
-          postComments: null
-        });
-      }
-
-      res.json({
-        errorMessage: null,
-        postComments: post.comments
-      });
+    res.json({
+      errorMessage: null,
+      postComments: populatedPost.comments
     });
   } catch (err) {
     console.error(err.message);
