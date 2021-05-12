@@ -57,7 +57,7 @@ module.exports.getMyPosts = async (req, res, next) => {
 
     const populatedUser = await User.findOne({ email: userEmail }).populate("posts");
     const populatedPost = await Post.populate(populatedUser.posts, { path: "comments" });
-
+    console.log(populatedUser);
     res.json({
       errorMessage: null,
       postsInfo: populatedPost
@@ -173,7 +173,7 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
   try {
     const { user, postId, commentId } = req.body;
 
-    const targetUser = await User.findOne({ email: user });
+    const targetUser = await User.findOne({ email: user }).lean();
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
     const isLikedUser = commentLikeList.includes(targetUser._id);
