@@ -21,10 +21,32 @@ const User = new mongoose.Schema({
     default: []
   },
   friends: {
-    type: [{
-      type: mongoose.Types.ObjectId,
-      ref: "User"
-    }],
+    type: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+    default: []
+  },
+  friendsWaitingList: {
+    type: [
+      {
+        userId: {
+          type: mongoose.Types.ObjectId,
+          ref: "User"
+        },
+        status: {
+          type: String,
+          enum: [
+            "SendPending",
+            "ReceivePending",
+            "SendReject",
+            "ReceiveReject"
+          ]
+        }
+      }
+    ],
     default: []
   }
 });
