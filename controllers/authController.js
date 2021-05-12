@@ -138,25 +138,34 @@ module.exports.AddFriend = async (req, res, next) => {
     const requestUser = await User.findOne({ email: currentUser });
     const receivedUser = await User.findOne({ email: targetUser });
 
-    let requestUserFriends = requestUser.friendsWaitingList;
-    let receivedUserFriends = receivedUser.friendsWaitingList;
+    let requestUserFriends = requestUser.friends;
+    let requestUserWaitingFriends = requestUser.friendsWaitingList;
+    let receivedUserFWaitingriends = receivedUser.friendsWaitingList;
 
-    const isAlreadyRequest = requestUserFriends.some((friend) =>
+    const isAlreadyFriend = requestUserFriends.some((friend) =>
+      String(friend) === String(receivedUser._id)
+    );
+
+    if (isAlreadyFriend) {
+      return res.json({ errorMessage: "이미 친구입니다." });
+    }
+
+    const isAlreadyRequest = requestUserWaitingFriends.some((friend) =>
       String(friend.userId) === String(receivedUser._id));
 
     if (isAlreadyRequest) {
       return res.json({ errorMessage: "이미 친구 요청한 유저입니다." });
     }
 
-    requestUserFriends.push({ userId: receivedUser._id, status: "SendPending" });
-    receivedUserFriends.push({ userId: requestUser._id, status: "ReceivePending" });
+    requestUserWaitingFriends.push({ userId: receivedUser._id, status: "SendPending" });
+    receivedUserFWaitingriends.push({ userId: requestUser._id, status: "ReceivePending" });
 
     await requestUser.updateOne({
-      "$set": { "friendsWaitingList": requestUserFriends }
+      "$set": { "friendsWaitingList": requestUserWaitingFriends }
     });
 
     await receivedUser.updateOne({
-      "$set": { "friendsWaitingList": receivedUserFriends }
+      "$set": { "friendsWaitingList": receivedUserFWaitingriends }
     });
 
     res.json({ errorMessage: null });
@@ -172,7 +181,7 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
 
     const currentUser = await User.findOne({ email: user });
     const populatedUserInfo = await User.populate(currentUser, { path: "friendsWaitingList.userId" });
-    console.log(populatedUserInfo);
+
     res.json({
       errorMessage: null,
       friends: populatedUserInfo.friendsWaitingList
@@ -186,15 +195,15 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
   }
 };
 
-module.exports.patchpendingFriend = async (req, res, next) => {
+module.exports.patchAcceptFriend = async (req, res, next) => {
   try {
     const { friendEmail, user } = req.body;
 
     const currentUser = await User.findOne({ email: user });
     const targetUser = await User.findOne({ email: friendEmail });
 
-    let currentUserWaitingFriends = currentUser.friendsWaitingList;
-    let targetUserWaitingFriends = targetUser.friendsWaitingList;
+    const currentUserWaitingFriends = currentUser.friendsWaitingList;
+    const targetUserWaitingFriends = targetUser.friendsWaitingList;
 
     const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
       String(waitingFriend.userId) !== String(targetUser._id)
@@ -215,6 +224,30 @@ module.exports.patchpendingFriend = async (req, res, next) => {
 
     await targetUser.update({
       "$set": { "friendsWaitingList": filterTargetWaitingFriends }
+    });
+
+    res.json({ errorMessage: null });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
+  }
+};
+
+module.exports.patchRejectFriend = async (req, res, next) => {
+  try {
+    const { friendEmail, user } = req.body;
+
+    const currentUser = await User.findOne({ email: user });
+    const targetUser = await User.findOne({ email: friendEmail });
+
+    const currentUserWaitingFriends = currentUser.friendsWaitingList;
+
+    const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
+      String(waitingFriend.userId) !== String(targetUser._id)
+    );
+
+    await currentUser.update({
+      "$set": { "friendsWaitingList": filterUserWaitingFriends }
     });
 
     res.json({ errorMessage: null });
