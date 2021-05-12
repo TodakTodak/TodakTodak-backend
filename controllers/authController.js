@@ -138,7 +138,7 @@ module.exports.AddFriend = async (req, res, next) => {
     const requestUser = await User.findOne({ email: currentUser });
     const receivedUser = await User.findOne({ email: targetUser });
 
-    let requestUserFriends = requestUser.friends;
+    const requestUserFriends = requestUser.friends;
     let requestUserWaitingFriends = requestUser.friendsWaitingList;
     let receivedUserFWaitingriends = receivedUser.friendsWaitingList;
 
@@ -241,12 +241,25 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     const targetUser = await User.findOne({ email: friendEmail });
 
     const currentUserWaitingFriends = currentUser.friendsWaitingList;
+    const targetUserWaitingFriends = targetUser.friendsWaitingList;
 
     const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
       String(waitingFriend.userId) !== String(targetUser._id)
     );
 
-    await currentUser.update({
+    const filterTargetUserWaitingFriends = targetUserWaitingFriends.map((waitingFriend) => {
+      if (String(waitingFriend.userId) === String(currentUser._id)) {
+        waitingFriend.status = "ReceiveReject";
+      }
+
+      return waitingFriend;
+    });
+
+    await targetUser.updateOne({
+      "$set": { "friendsWaitingList": filterTargetUserWaitingFriends }
+    });
+
+    await currentUser.updateOne({
       "$set": { "friendsWaitingList": filterUserWaitingFriends }
     });
 

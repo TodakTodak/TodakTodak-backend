@@ -40,7 +40,8 @@ const User = new mongoose.Schema({
           type: String,
           enum: [
             "SendPending",
-            "ReceivePending"
+            "ReceivePending",
+            "ReceiveReject"
           ]
         }
       }
