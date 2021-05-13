@@ -69,31 +69,25 @@ module.exports.patchComment = async (req, res, next) => {
     const targetUser = await User.findOne({ email: user }).lean();
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
-    const isLikedUser = commentLikeList.includes(targetUser._id);
+    const isLikedUser = commentLikeList.includes(targetUser.email);
 
     if (isLikedUser) {
-      const removeIndex = commentLikeList.indexOf(targetUser._id);
+      const removeIndex = commentLikeList.indexOf(targetUser.email);
 
       commentLikeList.splice(removeIndex, 1);
     } else {
-      commentLikeList.push(targetUser._id);
+      commentLikeList.push(targetUser.email);
     }
 
     await targetComment.updateOne({
       "$set": { "likes": commentLikeList }
     });
-    console.log(commentLikeList);
-    res.json({
-      errorMessage: null,
-      commentLikeList
-    })
+
+    res.json({ errorMessage: null });
 
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다.",
-      commentsLikeList: null
-    });
+    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
   }
 };

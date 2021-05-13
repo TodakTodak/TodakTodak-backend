@@ -52,7 +52,8 @@ const Post = new mongoose.Schema({
   likes: {
     type: [
       {
-        type: String
+        type: String,
+        required: true
       }
     ],
     default: []
