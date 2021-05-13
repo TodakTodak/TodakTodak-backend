@@ -30,7 +30,7 @@ module.exports.postWorryPost = async (req, res, next) => {
     const currentUser = await User.findOne({ email });
     const newPost = await Post.create({
       title: postTitle,
-      owner: currentUser._id,
+      owner: currentUser.email,
       ownerNickname: currentUser.nickname,
       isPublic,
       isAnonymous,
@@ -53,14 +53,12 @@ module.exports.postWorryPost = async (req, res, next) => {
 
 module.exports.getMyPosts = async (req, res, next) => {
   try {
-    const { userEmail } = req.params;
-
-    const populatedUser = await User.findOne({ email: userEmail }).populate("posts");
-    const populatedPost = await Post.populate(populatedUser.posts, { path: "comments" });
+    const { useremail } = req.headers;
+    const populatedUser = await User.findOne({ email: useremail }).populate("posts");
     console.log(populatedUser);
     res.json({
       errorMessage: null,
-      postsInfo: populatedPost
+      postsInfo: populatedUser.posts
     });
   } catch (err) {
     console.error(err.message);
@@ -91,7 +89,6 @@ module.exports.getCategoryPost = async (req, res, next) => {
             }
           ]
         );
-      const populatedPosts = await Post.populate(filteredPost, { path: "comments" });
 
       const sortPostLikes = (prev, next) => {
         if (prev.likes.length > next.likes.length) {
@@ -101,7 +98,7 @@ module.exports.getCategoryPost = async (req, res, next) => {
         return 1;
       };
 
-      bestPost = populatedPosts.sort(sortPostLikes)[0];
+      bestPost = filteredPost.sort(sortPostLikes)[0];
     }
 
     const filteredPost = await Post
@@ -121,12 +118,11 @@ module.exports.getCategoryPost = async (req, res, next) => {
           }
         ]
       );
-      const populatedPosts = await Post.populate(filteredPost, { path: "comments" });
 
       res.json({
         errorMessage: null,
         highestLikesPost: bestPost,
-        categoryPosts: populatedPosts
+        categoryPosts: filteredPost
       });
   } catch (err) {
     console.error(err.message);
@@ -176,14 +172,14 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
     const targetUser = await User.findOne({ email: user }).lean();
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
-    const isLikedUser = commentLikeList.includes(targetUser._id);
+    const isLikedUser = commentLikeList.includes(targetUser.email);
 
     if (isLikedUser) {
-      const removeIndex = commentLikeList.indexOf(targetUser._id);
+      const removeIndex = commentLikeList.indexOf(targetUser.email);
 
       commentLikeList.splice(removeIndex, 1);
     } else {
-      commentLikeList.push(targetUser._id);
+      commentLikeList.push(targetUser.email);
     }
 
     await targetComment.updateOne({
@@ -194,14 +190,14 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
 
     res.json({
       errorMessage: null,
-      postComments: populatedPost.comments
+      populatedPost
     });
   } catch (err) {
     console.error(err.message);
 
     res.status(500).json({
       errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
-      postComments: null
+      populatedPost: null
     });
   }
 };
@@ -232,6 +228,25 @@ module.exports.patchPostComments = async (req, res, next) => {
     res.status(500).json({
       errorMessage: "서버에 문제가 있습니다.",
       postComments: null
+    });
+  }
+};
+
+module.exports.getDetailPost = async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const post = await Post.findById(postId).populate("comments");
+
+    res.json({
+      errMessage: null,
+      post,
+    });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({
+      errMessage: "서버에 문제가 있습니다.",
+      post: null
     });
   }
 };

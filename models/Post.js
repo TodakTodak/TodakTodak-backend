@@ -6,8 +6,8 @@ const Post = new mongoose.Schema({
     required: true
   },
   owner: {
-    type: mongoose.Types.ObjectId,
-    ref: "User"
+    type: String,
+    required: true,
   },
   ownerNickname: {
     type: String,
