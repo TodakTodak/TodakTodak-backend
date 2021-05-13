@@ -246,7 +246,6 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
       String(waitingFriend.userId) !== String(targetUser._id)
     );
-
     const filterTargetUserWaitingFriends = targetUserWaitingFriends.map((waitingFriend) => {
       if (String(waitingFriend.userId) === String(currentUser._id)) {
         waitingFriend.status = "ReceiveReject";

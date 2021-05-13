@@ -20,8 +20,8 @@ const Comment = new mongoose.Schema({
   likes: {
     type: [
       {
-        type: mongoose.Types.ObjectId,
-        ref: "User"
+        type: String,
+        required: true
       }
     ],
     default: []
