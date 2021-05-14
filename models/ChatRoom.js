@@ -4,13 +4,17 @@ const ChatRoom = new mongoose.Schema({
   comments: {
     type: [
       {
-        nickname: {
+        userNickname: {
           type: String,
           required: true
         },
         createdAt: {
           type: Date,
-          default: Date.now()
+          required: true
+        },
+        comment: {
+          type: String,
+          default: ""
         }
       }
     ],

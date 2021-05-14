@@ -1,20 +1,20 @@
 const ChatRoom = require("../models/ChatRoom");
 
-const activatedRoomList = {}; // { chatRoomId: { chats: [], users: [] } }
+const activatedRoomList = {};
 
 module.exports = function socket(app) {
   app.io = require("socket.io")();
 
   app.io.on("connect", (socket) => {
-    console.log("연결 성공");
-
     socket.on("join room", async (data) => {
       const { chatRoomId, userNickname } = data;
       const isActivateRoom = activatedRoomList.hasOwnProperty(chatRoomId);
 
+      socket.join(chatRoomId);
+
       if (isActivateRoom) {
         activatedRoomList[chatRoomId].users.push(userNickname);
-        socket.emit("receive inital chats", activatedRoomList[chatRoomId].chats);
+        app.io.to(chatRoomId).emit("receive inital chats", activatedRoomList[chatRoomId].chats);
       } else {
         const chatRoomInfo = await ChatRoom.findById(chatRoomId).lean();
 
@@ -23,21 +23,29 @@ module.exports = function socket(app) {
           users: [userNickname]
         };
 
-        socket.emit("receive inital chats", activatedRoomList[chatRoomId].chats);
+        app.io.to(chatRoomId).emit("receive inital chats", activatedRoomList[chatRoomId].chats);
       }
     });
 
     socket.on("leave user", async (data) => {
       const { chatRoomId, userNickname } = data;
       const currentRoom = activatedRoomList[chatRoomId];
+
+      if (!currentRoom) return;
+
       const joinUsers = currentRoom.users;
 
       const filteredLeaveUsers = joinUsers.filter((user) =>
         user !== userNickname
       );
 
+      activatedRoomList[chatRoomId].users = filteredLeaveUsers;
+
       if (!filteredLeaveUsers.length) {
         const chatRoom = await ChatRoom.findById(chatRoomId);
+
+        delete activatedRoomList[chatRoomId];
+        socket.leave(chatRoomId);
 
         await chatRoom.updateOne({
           "$set": { comments: currentRoom.chats }
@@ -50,11 +58,11 @@ module.exports = function socket(app) {
       const chatData = {
         userNickname,
         comment,
-        createdAt: Date.now()
+        createdAt: new Date()
       };
 
       activatedRoomList[chatRoomId].chats.push(chatData);
-      app.io.emit("receive chat", chatData);
+      app.io.to(chatRoomId).emit("receive chat", chatData);
     });
   });
 }
