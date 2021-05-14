@@ -55,7 +55,7 @@ module.exports.getMyPosts = async (req, res, next) => {
   try {
     const { useremail } = req.headers;
     const populatedUser = await User.findOne({ email: useremail }).populate("posts");
-    console.log(populatedUser);
+
     res.json({
       errorMessage: null,
       postsInfo: populatedUser.posts

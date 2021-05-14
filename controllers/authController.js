@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
+const ChatRoom = require("../models/ChatRoom");
 
 module.exports.postSignup = async (req, res, next) => {
   try {
@@ -143,7 +144,7 @@ module.exports.AddFriend = async (req, res, next) => {
     let receivedUserFWaitingriends = receivedUser.friendsWaitingList;
 
     const isAlreadyFriend = requestUserFriends.some((friend) =>
-      String(friend) === String(receivedUser._id)
+      String(friend.friendInfo) === String(receivedUser._id)
     );
 
     if (isAlreadyFriend) {
@@ -151,14 +152,14 @@ module.exports.AddFriend = async (req, res, next) => {
     }
 
     const isAlreadyRequest = requestUserWaitingFriends.some((friend) =>
-      String(friend.userId) === String(receivedUser._id));
+      String(friend.friendInfo) === String(receivedUser._id));
 
     if (isAlreadyRequest) {
       return res.json({ errorMessage: "이미 친구 요청한 유저입니다." });
     }
 
-    requestUserWaitingFriends.push({ userId: receivedUser._id, status: "SendPending" });
-    receivedUserFWaitingriends.push({ userId: requestUser._id, status: "ReceivePending" });
+    requestUserWaitingFriends.push({ friendInfo: receivedUser._id, status: "SendPending" });
+    receivedUserFWaitingriends.push({ friendInfo: requestUser._id, status: "ReceivePending" });
 
     await requestUser.updateOne({
       "$set": { "friendsWaitingList": requestUserWaitingFriends }
@@ -180,7 +181,7 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
     const { user } = req.headers;
 
     const currentUser = await User.findOne({ email: user });
-    const populatedUserInfo = await User.populate(currentUser, { path: "friendsWaitingList.userId" });
+    const populatedUserInfo = await User.populate(currentUser, { path: "friendsWaitingList.friendInfo" });
 
     res.json({
       errorMessage: null,
@@ -206,14 +207,16 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
     const targetUserWaitingFriends = targetUser.friendsWaitingList;
 
     const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
-      String(waitingFriend.userId) !== String(targetUser._id)
+      String(waitingFriend.friendInfo) !== String(targetUser._id)
     );
     const filterTargetWaitingFriends = targetUserWaitingFriends.filter((waitingFriend) =>
-      String(waitingFriend.userId) !== String(currentUser._id)
+      String(waitingFriend.friendInfo) !== String(currentUser._id)
     );
 
-    currentUser.friends.push(targetUser._id);
-    targetUser.friends.push(currentUser._id);
+    const newChatRoom = await ChatRoom.create({});
+
+    currentUser.friends.push({ friendInfo: targetUser._id, chatRoomId: newChatRoom._id });
+    targetUser.friends.push({ friendInfo: currentUser._id, chatRoomId: newChatRoom._id });
 
     await currentUser.save();
     await targetUser.save();
@@ -244,10 +247,10 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     const targetUserWaitingFriends = targetUser.friendsWaitingList;
 
     const filterUserWaitingFriends = currentUserWaitingFriends.filter((waitingFriend) =>
-      String(waitingFriend.userId) !== String(targetUser._id)
+      String(waitingFriend.friendInfo) !== String(targetUser._id)
     );
     const filterTargetUserWaitingFriends = targetUserWaitingFriends.map((waitingFriend) => {
-      if (String(waitingFriend.userId) === String(currentUser._id)) {
+      if (String(waitingFriend.friendInfo) === String(currentUser._id)) {
         waitingFriend.status = "ReceiveReject";
       }
 
@@ -274,7 +277,7 @@ module.exports.getFriends = async (req, res, next) => {
     const { user } = req.headers;
 
     const currentUser = await User.findOne({ email: user });
-    const populatedUser = await User.populate(currentUser, { path: "friends" });
+    const populatedUser = await User.populate(currentUser, { path: "friends.friendInfo" });
 
     res.json({
       errorMessage: null,
