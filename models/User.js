@@ -23,8 +23,14 @@ const User = new mongoose.Schema({
   friends: {
     type: [
       {
-        type: mongoose.Types.ObjectId,
-        ref: "User"
+        friendInfo: {
+          type: mongoose.Types.ObjectId,
+          ref: "User"
+        },
+        chatRoomId: {
+          type: mongoose.Types.ObjectId,
+          ref: "ChatRoom"
+        }
       }
     ],
     default: []
@@ -32,7 +38,7 @@ const User = new mongoose.Schema({
   friendsWaitingList: {
     type: [
       {
-        userId: {
+        friendInfo: {
           type: mongoose.Types.ObjectId,
           ref: "User"
         },
