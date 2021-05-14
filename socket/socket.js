@@ -14,7 +14,10 @@ module.exports = function socket(app) {
 
       if (isActivateRoom) {
         activatedRoomList[chatRoomId].users.push(userNickname);
-        app.io.to(chatRoomId).emit("receive inital chats", activatedRoomList[chatRoomId].chats);
+        app.io.to(chatRoomId).emit(
+          "receive inital chats",
+          activatedRoomList[chatRoomId].chats
+        );
       } else {
         const chatRoomInfo = await ChatRoom.findById(chatRoomId).lean();
 
@@ -23,7 +26,10 @@ module.exports = function socket(app) {
           users: [userNickname]
         };
 
-        app.io.to(chatRoomId).emit("receive inital chats", activatedRoomList[chatRoomId].chats);
+        app.io.to(chatRoomId).emit(
+          "receive inital chats",
+          activatedRoomList[chatRoomId].chats
+        );
       }
     });
 
