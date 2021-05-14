@@ -1,14 +1,12 @@
 const mongoose = require("mongoose");
 
 const ChatRoom = new mongoose.Schema({
-  owner: {
-    type: String,
-    required: true
-  },
-  participant: {
-    type: String,
-    required: true
-  },
+  joinUsers: [
+    {
+      type: String,
+      require: true
+    }
+  ],
   comments: [
     {
       nickname: {
