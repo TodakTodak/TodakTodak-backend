@@ -14,7 +14,8 @@ module.exports = function socket(app) {
 
       if (isActivateRoom) {
         activatedRoomList[chatRoomId].users.push(userNickname);
-        app.io.to(chatRoomId).emit(
+
+        app.io.to(socket.id).emit(
           "receive inital chats",
           activatedRoomList[chatRoomId].chats
         );
@@ -31,6 +32,14 @@ module.exports = function socket(app) {
           activatedRoomList[chatRoomId].chats
         );
       }
+
+      socket.broadcast.to(chatRoomId).emit(
+        "join user message",
+        {
+          systemMessage: `${userNickname}님이 입장하셨습니다`,
+          createdAt: new Date()
+        }
+      );
     });
 
     socket.on("leave user", async (data) => {
@@ -46,6 +55,14 @@ module.exports = function socket(app) {
       );
 
       activatedRoomList[chatRoomId].users = filteredLeaveUsers;
+
+      socket.broadcast.to(chatRoomId).emit(
+        "leave user message",
+        {
+          systemMessage: `${userNickname}님이 나갔습니다`,
+          createdAt: new Date()
+        }
+      );
 
       if (!filteredLeaveUsers.length) {
         const chatRoom = await ChatRoom.findById(chatRoomId);
