@@ -75,31 +75,28 @@ module.exports.getCategoryPost = async (req, res, next) => {
     const { category } = req.params;
     const { page } = req.headers;
     const limit = 5;
-    let bestPost;
 
-    if (page === "0") {
-      const filteredPost = await Post
-        .aggregate(
-          [
-            {
-              $match: { "category": category }
-            },
-            {
-              $match: { "isPublic": true }
-            }
-          ]
-        );
+    const filteredAllPost = await Post
+      .aggregate(
+        [
+          {
+            $match: { "category": category }
+          },
+          {
+            $match: { "isPublic": true }
+          }
+        ]
+      );
 
-      const sortPostLikes = (prev, next) => {
-        if (prev.likes.length > next.likes.length) {
-          return -1;
-        }
+    const sortPostLikes = (prev, next) => {
+      if (prev.likes.length > next.likes.length) {
+        return -1;
+      }
 
-        return 1;
-      };
+      return 1;
+    };
 
-      bestPost = filteredPost.sort(sortPostLikes)[0];
-    }
+    const bestPost = filteredAllPost.sort(sortPostLikes)[0];
 
     const filteredPost = await Post
       .aggregate(
