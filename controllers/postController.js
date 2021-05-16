@@ -236,7 +236,7 @@ module.exports.getDetailPost = async (req, res, next) => {
 
     res.json({
       errMessage: null,
-      post,
+      post
     });
   } catch (err) {
     console.error(err.message);
