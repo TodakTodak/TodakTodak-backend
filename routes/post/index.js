@@ -7,12 +7,14 @@ const {
   getCategoryPost,
   patchPostLike,
   postWorryPost,
+  getDetailPost,
   getMyPosts,
-  getDetailPost
+  patchPost
 } = require("../../controllers/postController");
 
 router.post("/", postWorryPost);
-router.patch("/", patchPostLike);
+router.patch("/", patchPost);
+router.patch("/like", patchPostLike);
 router.patch("/comments", patchPostComments);
 router.patch("/comments/like", patchPostCommentLike);
 router.get("/category/:category", getCategoryPost);

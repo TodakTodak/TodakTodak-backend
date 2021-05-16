@@ -242,8 +242,38 @@ module.exports.getDetailPost = async (req, res, next) => {
     console.error(err.message);
 
     res.status(500).json({
-      errMessage: "서버에 문제가 있습니다.",
+      errorMessage: "서버에 문제가 있습니다.",
       post: null
     });
+  }
+};
+
+module.exports.patchPost = async (req, res, next) => {
+  try {
+    const {
+      postId,
+      postType,
+      category,
+      postTitle,
+      worryContents,
+      anonymousType
+    } = req.body;
+
+    const isPublic = postType === "Public" ? true : false;
+    const isAnonymous = anonymousType === "anonymouns" ? true : false;
+
+    await Post.findById(postId).updateMany({
+      isPublic,
+      category,
+      isAnonymous,
+      title: postTitle,
+      contents: worryContents
+    });
+
+    res.json({ errorMessage: null });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
   }
 };
