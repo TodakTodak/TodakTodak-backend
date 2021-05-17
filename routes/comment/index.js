@@ -3,11 +3,13 @@ const router = express.Router();
 
 const {
   getComments,
+  deleteComment,
   patchComment,
-  patchCommentLike
+  patchCommentLike,
 } = require("../../controllers/commentController");
 
 router.get("/:userEmail", getComments);
+router.delete("/:commentId", deleteComment);
 router.patch("/", patchComment);
 router.patch("/like", patchCommentLike);
 
