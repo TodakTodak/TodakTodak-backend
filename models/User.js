@@ -14,10 +14,12 @@ const User = new mongoose.Schema({
     require: true
   },
   posts: {
-    type: [{
-      type: mongoose.Types.ObjectId,
-      ref: "Post"
-    }],
+    type: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Post"
+      }
+    ],
     default: []
   },
   friends: {

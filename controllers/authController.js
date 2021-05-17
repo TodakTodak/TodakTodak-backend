@@ -215,8 +215,15 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
 
     const newChatRoom = await ChatRoom.create({});
 
-    currentUser.friends.push({ friendInfo: targetUser._id, chatRoomId: newChatRoom._id });
-    targetUser.friends.push({ friendInfo: currentUser._id, chatRoomId: newChatRoom._id });
+    currentUser.friends.push({
+      friendInfo: targetUser._id,
+      chatRoomId: newChatRoom._id
+    });
+
+    targetUser.friends.push({
+      friendInfo: currentUser._id,
+      chatRoomId: newChatRoom._id
+    });
 
     await currentUser.save();
     await targetUser.save();
@@ -229,7 +236,17 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
       "$set": { "friendsWaitingList": filterTargetWaitingFriends }
     });
 
-    res.json({ errorMessage: null });
+    const acceptInfo = await User
+      .findOne({ email: user })
+      .populate("friends.friendInfo")
+      .populate("friendsWaitingList.friendInfo")
+      .lean();
+
+    res.json({
+      errorMessage: null,
+      friends: acceptInfo.friends,
+      waitingFriend: acceptInfo.friendsWaitingList
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
@@ -265,7 +282,15 @@ module.exports.patchRejectFriend = async (req, res, next) => {
       "$set": { "friendsWaitingList": filterUserWaitingFriends }
     });
 
-    res.json({ errorMessage: null });
+    const rejectInfo = await User
+      .findOne({ email: user })
+      .populate("friendsWaitingList.friendInfo")
+      .lean();
+
+    res.json({
+      errorMessage: null,
+      waitingFriend: rejectInfo.friendsWaitingList
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
@@ -277,7 +302,10 @@ module.exports.getFriends = async (req, res, next) => {
     const { user } = req.headers;
 
     const currentUser = await User.findOne({ email: user });
-    const populatedUser = await User.populate(currentUser, { path: "friends.friendInfo" });
+    const populatedUser = await User.populate(
+      currentUser,
+      { path: "friends.friendInfo" }
+    );
 
     res.json({
       errorMessage: null,
@@ -288,6 +316,27 @@ module.exports.getFriends = async (req, res, next) => {
     res.status(500).json({
       errorMessage: "서베에 문제가 발생했습니다",
       friends: null
+    });
+  }
+};
+
+module.exports.getMyPosts = async (req, res, next) => {
+  try {
+    const { useremail } = req.headers;
+    const populatedUser = await User
+      .findOne({ email: useremail })
+      .populate("posts");
+
+    res.json({
+      errorMessage: null,
+      postsInfo: populatedUser.posts
+    });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).json({
+      errorMessage: "게시물을 가져오는데 실패했습니다",
+      posts: null
     });
   }
 };
