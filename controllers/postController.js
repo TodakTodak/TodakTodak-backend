@@ -51,25 +51,6 @@ module.exports.postWorryPost = async (req, res, next) => {
   }
 };
 
-module.exports.getMyPosts = async (req, res, next) => {
-  try {
-    const { useremail } = req.headers;
-    const populatedUser = await User.findOne({ email: useremail }).populate("posts");
-
-    res.json({
-      errorMessage: null,
-      postsInfo: populatedUser.posts
-    });
-  } catch (err) {
-    console.error(err.message);
-
-    return res.status(500).json({
-      errorMessage: "게시물을 가져오는데 실패했습니다",
-      posts: null
-    });
-  }
-};
-
 module.exports.getCategoryPost = async (req, res, next) => {
   try {
     const { category } = req.params;
@@ -271,6 +252,41 @@ module.exports.patchPost = async (req, res, next) => {
     });
 
     res.json({ errorMessage: null });
+  } catch (err) {
+    console.error(err.message);
+
+    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+  }
+};
+
+module.exports.deletePost = async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+
+    const targetPost = await Post.findById(postId).lean();
+    const postOwnerEmail = targetPost.owner;
+    const targetComments = targetPost.comments;
+    const targetPostId = targetPost._id;
+    const postOwner = await User.findOne({ email: postOwnerEmail });
+    const ownerPosts = postOwner.posts;
+
+    const deletedPosts = ownerPosts.filter((post) =>
+      String(post) !== String(targetPostId)
+    );
+
+    await postOwner.update({ "$set": { "posts": deletedPosts } });
+    await Post.findByIdAndDelete(postId);
+    await Comment.deleteMany({ _id: { $in: targetComments } });
+
+    const deletedPostUserInfo = await User
+      .findOne({ email: postOwnerEmail })
+      .populate("posts")
+      .lean();
+
+    res.json({
+      errorMessage: null,
+      posts: deletedPostUserInfo.posts
+    });
   } catch (err) {
     console.error(err.message);
 

@@ -7,14 +7,16 @@ const {
   postSignup,
   putLogin,
   AddFriend,
+  getMyPosts,
   getFriends,
   getWaitingFrineds,
   patchAcceptFriend,
   patchRejectFriend
 } = require("../../controllers/authController");
 
-router.get("/waitingFriend", getWaitingFrineds);
+router.get("/posts", getMyPosts);
 router.get("/friend", getFriends);
+router.get("/waitingFriend", getWaitingFrineds);
 router.post("/", validateSignupInfo, postSignup);
 router.put("/", validateLoginInfo, putLogin);
 router.patch("/friend", AddFriend);

@@ -7,7 +7,7 @@ const Post = new mongoose.Schema({
   },
   owner: {
     type: String,
-    required: true,
+    required: true
   },
   ownerNickname: {
     type: String,
