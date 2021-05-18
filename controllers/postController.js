@@ -1,6 +1,14 @@
+const createError = require("http-errors");
+
 const Post = require("../models/Post");
 const User = require("../models/User");
 const Comment = require("../models/Comment");
+
+const {
+  SERVER_ERROR,
+  MISSING_CONTENT,
+  GET_POSTS_MESSAGE
+} = require("../constants/errorComment");
 
 module.exports.postWorryPost = async (req, res, next) => {
   try {
@@ -22,9 +30,7 @@ module.exports.postWorryPost = async (req, res, next) => {
       !category ||
       !worryContents
     ) {
-      return res.status(400).json({
-        errorMessage: "누락된 정보가 있습니다. 확인 부탁드립니다"
-      });
+      return next(createError(400, MISSING_CONTENT));
     }
 
     const currentUser = await User.findOne({ email });
@@ -45,9 +51,7 @@ module.exports.postWorryPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 발생했습니다"
-    });
+    return next(createError(500, SERVER_ERROR));
   }
 };
 
@@ -105,11 +109,11 @@ module.exports.getCategoryPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return res.status(500).json({
+    return next(createError(500, {
       categoryPosts: null,
       highestLikesPost: null,
-      errorMessage: "게시물을 가져오는데 실패했습니다"
-    });
+      errorMessage: GET_POSTS_MESSAGE
+    }));
   }
 };
 
@@ -135,11 +139,7 @@ module.exports.patchPostLike = async (req, res, next) => {
 
     res.json({ errorMessage: null });
   } catch (err) {
-    console.error(err.message);
-
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요"
-    });
+    next(createError(500, { errorMessage: err.message }));
   }
 };
 
@@ -164,7 +164,9 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
       "$set": { "likes": commentLikeList }
     });
 
-    const populatedPost = await Post.findById(postId).populate("comments");
+    const populatedPost = await Post
+      .findById(postId)
+      .populate("comments");
 
     res.json({
       errorMessage: null,
@@ -173,10 +175,10 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다. 다시 시도해 주세요",
+    next(createError(500, {
+      errorMessage: SERVER_ERROR,
       populatedPost: null
-    });
+    }));
   }
 };
 
@@ -194,7 +196,9 @@ module.exports.patchPostComments = async (req, res, next) => {
     currentPost.comments.push(newComment._id);
     await currentPost.save();
 
-    const populatedPost = await Post.findById(postId).populate("comments");
+    const populatedPost = await Post
+      .findById(postId)
+      .populate("comments");
 
     res.json({
       errorMessage: null,
@@ -203,10 +207,10 @@ module.exports.patchPostComments = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다.",
+    next(createError(500, {
+      errorMessage: SERVER_ERROR,
       postComments: null
-    });
+    }));
   }
 };
 
@@ -222,10 +226,10 @@ module.exports.getDetailPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다.",
+    next(createError(500, {
+      errorMessage: SERVER_ERROR,
       post: null
-    });
+    }));
   }
 };
 
@@ -255,7 +259,7 @@ module.exports.patchPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+    next(createError(500 ,{ errorMessage: SERVER_ERROR }));
   }
 };
 
@@ -290,6 +294,6 @@ module.exports.deletePost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+    next(createError(500 ,{ errorMessage: SERVER_ERROR }));
   }
 };

@@ -1,6 +1,10 @@
-const Comment = require("../models/Comment");
-const User = require("../models/User");
+const createError = require("http-errors");
+
 const Post = require("../models/Post");
+const User = require("../models/User");
+const Comment = require("../models/Comment");
+
+const { SERVER_MESSAGE } = require("../constants/errorComment");
 
 module.exports.getComments = async (req, res, next) => {
   try {
@@ -21,10 +25,10 @@ module.exports.getComments = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 있습니다.",
+    return next(createError(500, {
+      errorMessage: SERVER_MESSAGE,
       comments: null
-    });
+    }));
   }
 };
 
@@ -54,7 +58,7 @@ module.exports.patchCommentLike = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
   }
 };
 
@@ -75,7 +79,7 @@ module.exports.patchComment = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
   }
 };
 
@@ -107,6 +111,6 @@ module.exports.deleteComment = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({ errorMessage: "서버에 문제가 있습니다." });
+    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
   }
 };

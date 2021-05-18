@@ -32,6 +32,10 @@ const User = new mongoose.Schema({
         chatRoomId: {
           type: mongoose.Types.ObjectId,
           ref: "ChatRoom"
+        },
+        unreadMessageCount: {
+          type: Number,
+          default: 0
         }
       }
     ],

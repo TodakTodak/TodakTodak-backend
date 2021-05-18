@@ -76,11 +76,15 @@ module.exports = function socket(app) {
       }
     });
 
-    socket.on("send chat", (data) => {
-      const { userNickname, comment, chatRoomId } = data;
-      const chatData = {
-        userNickname,
+    socket.on("send chat", async (data) => {
+      const {
         comment,
+        chatRoomId,
+        userNickname
+      } = data;
+      const chatData = {
+        comment,
+        userNickname,
         createdAt: new Date()
       };
 

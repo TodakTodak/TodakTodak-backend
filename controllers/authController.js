@@ -1,8 +1,20 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const createError = require("http-errors");
 
 const User = require("../models/User");
 const ChatRoom = require("../models/ChatRoom");
+
+const {
+  LOGIN_FAIL,
+  EXIST_EMAIL,
+  NOT_EXIST_EMAIL,
+  ALREADY_FRIEND,
+  SERVER_MESSAGE,
+  MISSING_MESSAGE,
+  MISSING_PASSWORD,
+  ALREADY_REQUEST_FRIEND
+} = require("../constants/errorComment");
 
 module.exports.postSignup = async (req, res, next) => {
   try {
@@ -13,35 +25,35 @@ module.exports.postSignup = async (req, res, next) => {
       password === "" ||
       nickname === ""
     ) {
-      return res.status(400).json({
-        errorMessage: "누락된 정보가 있습니다. 확인 부탁드립니다"
-      });
+      return next(createError(400, {
+        errorMessage: MISSING_MESSAGE
+      }));
     }
 
     const existEamil = await User.findOne({ email }).lean();
 
     if (existEamil) {
-      return res.status(400).json({
-        errorMessage: "이미 존재하는 이메일입니다. 다른 이메일을 입력해주세요"
-      });
+      return next(createError(400, {
+        errorMessage: EXIST_EMAIL
+      }));
     }
 
     bcrypt.genSalt(10, (err, salt) => {
       if (err) {
         console.error(err.message);
 
-        return res.status(500).json({
-          errorMessage: "서버에 문제가 발생했습니다."
-        });
+        return next(createError(500, {
+          errorMessage: SERVER_MESSAGE
+        }));
       }
 
       bcrypt.hash(password, salt, async (err, hash) => {
         if (err) {
           console.error(err.message);
 
-          return res.status(500).json({
-            errorMessage: "서버에 문제가 발생했습니다."
-          });
+          return next(createError(500, {
+            errorMessage: SERVER_MESSAGE
+          }));
         }
 
         password = hash;
@@ -62,9 +74,9 @@ module.exports.postSignup = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 발생했습니다."
-    });
+    return next(createError(500, {
+      errorMessage: SERVER_MESSAGE
+    }));
   }
 };
 
@@ -75,11 +87,11 @@ module.exports.putLogin = async (req, res, next) => {
     const existUser = await User.findOne({ email }).lean();
 
     if (!existUser) {
-      return res.status(403).json({
-        errorMessage: "존재하지 않는 이메일입니다.",
+      return next(createError(403, {
+        token: null,
         loginInfo: null,
-        token: null
-      });
+        errorMessage: NOT_EXIST_EMAIL
+      }));
     }
 
     const checkPassword = () => {
@@ -87,11 +99,11 @@ module.exports.putLogin = async (req, res, next) => {
         if (err) {
           console.error(err.message);
 
-          return res.status(500).json({
-            errorMessage: "로그인에 실패했습니다",
+          return next(createError(500, {
+            token: null,
             loginInfo: null,
-            token: null
-          });
+            errorMessage: LOGIN_FAIL
+          }));
         }
 
         if (isMatch) {
@@ -112,11 +124,11 @@ module.exports.putLogin = async (req, res, next) => {
           });
         }
 
-        res.status(403).json({
-          errorMessage: "비밀번호가 틀렸습니다",
+        return next(createError(403, {
+          token: null,
           loginInfo: null,
-          token: null
-        });
+          errorMessage: MISSING_PASSWORD
+        }));
       });
     };
 
@@ -124,11 +136,11 @@ module.exports.putLogin = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    res.status(500).json({
-      errorMessage: "서버에 문제가 발생했습니다",
+    return next(createError(500, {
+      token: null,
       loginInfo: null,
-      token: null
-    });
+      errorMessage: SERVER_MESSAGE
+    }));
   }
 };
 
@@ -148,18 +160,24 @@ module.exports.AddFriend = async (req, res, next) => {
     );
 
     if (isAlreadyFriend) {
-      return res.json({ errorMessage: "이미 친구입니다." });
+      return next(createError(400, { errorMessage: ALREADY_FRIEND }));
     }
 
     const isAlreadyRequest = requestUserWaitingFriends.some((friend) =>
       String(friend.friendInfo) === String(receivedUser._id));
 
     if (isAlreadyRequest) {
-      return res.json({ errorMessage: "이미 친구 요청한 유저입니다." });
+      return next(createError(400, { errorMessage: ALREADY_REQUEST_FRIEND }));
     }
 
-    requestUserWaitingFriends.push({ friendInfo: receivedUser._id, status: "SendPending" });
-    receivedUserFWaitingriends.push({ friendInfo: requestUser._id, status: "ReceivePending" });
+    requestUserWaitingFriends.push({
+      friendInfo: receivedUser._id,
+      status: "SendPending"
+    });
+    receivedUserFWaitingriends.push({
+      friendInfo: requestUser._id,
+      status: "ReceivePending"
+    });
 
     await requestUser.updateOne({
       "$set": { "friendsWaitingList": requestUserWaitingFriends }
@@ -172,7 +190,7 @@ module.exports.AddFriend = async (req, res, next) => {
     res.json({ errorMessage: null });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
+    res.status(500).json({ errorMessage: SERVER_MESSAGE });
   }
 };
 
@@ -181,7 +199,10 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
     const { user } = req.headers;
 
     const currentUser = await User.findOne({ email: user });
-    const populatedUserInfo = await User.populate(currentUser, { path: "friendsWaitingList.friendInfo" });
+    const populatedUserInfo = await User.populate(
+      currentUser,
+      { path: "friendsWaitingList.friendInfo" }
+    );
 
     res.json({
       errorMessage: null,
@@ -189,10 +210,11 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({
-      errorMessage: "서버에 문제가 발생했습니다",
+
+    return next(createError(500, {
+      errorMessage: SERVER_MESSAGE,
       friends: null
-    });
+    }));
   }
 };
 
@@ -249,7 +271,8 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
+
+    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
   }
 };
 
@@ -293,7 +316,8 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ errorMessage: "서버에 문제가 발생했습니다" });
+
+    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
   }
 };
 
@@ -313,10 +337,11 @@ module.exports.getFriends = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({
-      errorMessage: "서베에 문제가 발생했습니다",
+
+    return next(createError(500, {
+      errorMessage: SERVER_MESSAGE,
       friends: null
-    });
+    }));
   }
 };
 
@@ -334,9 +359,10 @@ module.exports.getMyPosts = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return res.status(500).json({
-      errorMessage: "게시물을 가져오는데 실패했습니다",
-      posts: null
-    });
+
+    return next(createError(500, {
+      errorMessage: SERVER_MESSAGE,
+      postsInfo: null
+    }));
   }
 };
