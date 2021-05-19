@@ -1,13 +1,24 @@
 const ChatRoom = require("../models/ChatRoom");
 const User = require("../models/User");
 
+const {
+  CONNECT,
+  JOIN_ROOM,
+  SEND_CHAT,
+  LEAVE_USER,
+  RECEIVE_CHAT,
+  JOIN_USER_MESSAGE,
+  LEAVE_USER_MESSAGE,
+  RECEIVE_INITAL_CHATS
+} = require("../constants/socketEvents");
+
 const activatedRoomList = {};
 
 module.exports = function socket(app) {
   app.io = require("socket.io")();
 
-  app.io.on("connect", (socket) => {
-    socket.on("join room", async (data) => {
+  app.io.on(CONNECT, (socket) => {
+    socket.on(JOIN_ROOM, async (data) => {
       const { user, chatRoomId } = data;
       const isActivateRoom = activatedRoomList.hasOwnProperty(chatRoomId);
 
@@ -17,7 +28,7 @@ module.exports = function socket(app) {
         activatedRoomList[chatRoomId].users.push(user.nickname);
 
         app.io.to(socket.id).emit(
-          "receive inital chats",
+          RECEIVE_INITAL_CHATS,
           activatedRoomList[chatRoomId].chats
         );
       } else {
@@ -29,13 +40,13 @@ module.exports = function socket(app) {
         };
 
         app.io.to(chatRoomId).emit(
-          "receive inital chats",
+          RECEIVE_INITAL_CHATS,
           activatedRoomList[chatRoomId].chats
         );
       }
 
       socket.broadcast.to(chatRoomId).emit(
-        "join user message",
+        JOIN_USER_MESSAGE,
         {
           systemMessage: `${user.nickname}님이 입장하셨습니다`,
           createdAt: new Date()
@@ -58,7 +69,7 @@ module.exports = function socket(app) {
       });
     });
 
-    socket.on("leave user", async (data) => {
+    socket.on(LEAVE_USER, async (data) => {
       const { chatRoomId, user } = data;
       const currentRoom = activatedRoomList[chatRoomId];
 
@@ -72,7 +83,7 @@ module.exports = function socket(app) {
       activatedRoomList[chatRoomId].users = filteredLeaveUsers;
 
       socket.broadcast.to(chatRoomId).emit(
-        "leave user message",
+        LEAVE_USER_MESSAGE,
         {
           systemMessage: `${user.nickname}님이 나갔습니다`,
           createdAt: new Date()
@@ -91,7 +102,7 @@ module.exports = function socket(app) {
       }
     });
 
-    socket.on("send chat", async (data) => {
+    socket.on(SEND_CHAT, async (data) => {
       const {
         user,
         comment,
@@ -106,7 +117,7 @@ module.exports = function socket(app) {
       };
 
       activatedRoomList[chatRoomId].chats.push(chatData);
-      app.io.to(chatRoomId).emit("receive chat", chatData);
+      app.io.to(chatRoomId).emit(RECEIVE_CHAT, chatData);
 
       if (activatedRoomList[chatRoomId].users.length < 2) {
         const friend = await User.findOne({ email: friendInfo.email });

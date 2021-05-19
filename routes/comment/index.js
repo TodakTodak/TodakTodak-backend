@@ -8,7 +8,7 @@ const {
   patchCommentLike,
 } = require("../../controllers/commentController");
 
-router.get("/:userEmail", getComments);
+router.get("/", getComments);
 router.delete("/:commentId", deleteComment);
 router.patch("/", patchComment);
 router.patch("/like", patchCommentLike);

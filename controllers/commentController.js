@@ -8,12 +8,12 @@ const { SERVER_MESSAGE } = require("../constants/errorComment");
 
 module.exports.getComments = async (req, res, next) => {
   try {
-    const { userEmail } = req.params;
+    const { useremail } = req.headers;
 
     const fileredComment = await Comment.aggregate(
       [
         {
-          $match: { "user": userEmail }
+          $match: { "user": useremail }
         }
       ]
     );
