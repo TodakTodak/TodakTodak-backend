@@ -54,7 +54,6 @@ module.exports.patchCommentLike = async (req, res, next) => {
     });
 
     res.json({ errorMessage: null });
-
   } catch (err) {
     console.error(err.message);
 

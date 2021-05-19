@@ -160,14 +160,14 @@ module.exports.AddFriend = async (req, res, next) => {
     );
 
     if (isAlreadyFriend) {
-      return next(createError(400, { errorMessage: ALREADY_FRIEND }));
+      return next(createError(400, ALREADY_FRIEND));
     }
 
     const isAlreadyRequest = requestUserWaitingFriends.some((friend) =>
       String(friend.friendInfo) === String(receivedUser._id));
 
     if (isAlreadyRequest) {
-      return next(createError(400, { errorMessage: ALREADY_REQUEST_FRIEND }));
+      return next(createError(400, ALREADY_REQUEST_FRIEND));
     }
 
     requestUserWaitingFriends.push({
