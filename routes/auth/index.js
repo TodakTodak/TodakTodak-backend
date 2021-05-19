@@ -3,10 +3,12 @@ const router = express.Router();
 
 const { validateSignupInfo } = require("../../middlewares/signupValidate");
 const { validateLoginInfo } = require("../../middlewares/loginValidate");
+const { authorizeUser } = require("../../middlewares/authorizeUser");
+
 const {
-  postSignup,
   putLogin,
-  AddFriend,
+  postSignup,
+  addFriend,
   getMyPosts,
   getFriends,
   getWaitingFrineds,
@@ -14,13 +16,13 @@ const {
   patchRejectFriend
 } = require("../../controllers/authController");
 
-router.get("/posts", getMyPosts);
-router.get("/friend", getFriends);
-router.get("/waitingFriend", getWaitingFrineds);
+router.get("/posts", authorizeUser, getMyPosts);
+router.get("/friend", authorizeUser, getFriends);
+router.get("/waitingFriend", authorizeUser, getWaitingFrineds);
 router.post("/", validateSignupInfo, postSignup);
 router.put("/", validateLoginInfo, putLogin);
-router.patch("/friend", AddFriend);
-router.patch("/waitingFriend", patchAcceptFriend);
-router.patch("/rejectFriend", patchRejectFriend);
+router.patch("/friend", authorizeUser, addFriend);
+router.patch("/waitingFriend", authorizeUser, patchAcceptFriend);
+router.patch("/rejectFriend", authorizeUser, patchRejectFriend);
 
 module.exports = router;

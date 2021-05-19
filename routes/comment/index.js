@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
+const { authorizeUser } = require("../../middlewares/authorizeUser");
+
 const {
   getComments,
   deleteComment,
@@ -8,9 +10,9 @@ const {
   patchCommentLike,
 } = require("../../controllers/commentController");
 
-router.get("/", getComments);
-router.delete("/:commentId", deleteComment);
-router.patch("/", patchComment);
-router.patch("/like", patchCommentLike);
+router.get("/", authorizeUser, getComments);
+router.delete("/:commentId", authorizeUser, deleteComment);
+router.patch("/", authorizeUser, patchComment);
+router.patch("/like", authorizeUser, patchCommentLike);
 
 module.exports = router;

@@ -144,11 +144,18 @@ module.exports.putLogin = async (req, res, next) => {
   }
 };
 
-module.exports.AddFriend = async (req, res, next) => {
+module.exports.addFriend = async (req, res, next) => {
   try {
-    const { currentUser, targetUser } = req.body;
+    const {
+      body: {
+        targetUser
+      },
+      userInfo: {
+        id
+      }
+    } = req;
 
-    const requestUser = await User.findOne({ email: currentUser });
+    const requestUser = await User.findById(id);
     const receivedUser = await User.findOne({ email: targetUser });
 
     const requestUserFriends = requestUser.friends;
@@ -196,9 +203,9 @@ module.exports.AddFriend = async (req, res, next) => {
 
 module.exports.getWaitingFrineds = async (req, res, next) => {
   try {
-    const { user } = req.headers;
+    const { id } = req.userInfo;
 
-    const currentUser = await User.findOne({ email: user });
+    const currentUser = await User.findById(id);
     const populatedUserInfo = await User.populate(
       currentUser,
       { path: "friendsWaitingList.friendInfo" }
@@ -220,9 +227,16 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
 
 module.exports.patchAcceptFriend = async (req, res, next) => {
   try {
-    const { friendEmail, user } = req.body;
+    const {
+      body: {
+        friendEmail
+      },
+      userInfo: {
+        id
+      }
+    } = req;
 
-    const currentUser = await User.findOne({ email: user });
+    const currentUser = await User.findById(id);
     const targetUser = await User.findOne({ email: friendEmail });
 
     const currentUserWaitingFriends = currentUser.friendsWaitingList;
@@ -259,7 +273,7 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
     });
 
     const acceptInfo = await User
-      .findOne({ email: user })
+      .findById(id)
       .populate("friends.friendInfo")
       .populate("friendsWaitingList.friendInfo")
       .lean();
@@ -278,9 +292,16 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
 
 module.exports.patchRejectFriend = async (req, res, next) => {
   try {
-    const { friendEmail, user } = req.body;
+    const {
+      body: {
+        friendEmail
+      },
+      userInfo: {
+        id
+      }
+    } = req;
 
-    const currentUser = await User.findOne({ email: user });
+    const currentUser = await User.findById(id);
     const targetUser = await User.findOne({ email: friendEmail });
 
     const currentUserWaitingFriends = currentUser.friendsWaitingList;
@@ -306,7 +327,7 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     });
 
     const rejectInfo = await User
-      .findOne({ email: user })
+      .findById(id)
       .populate("friendsWaitingList.friendInfo")
       .lean();
 
@@ -323,9 +344,9 @@ module.exports.patchRejectFriend = async (req, res, next) => {
 
 module.exports.getFriends = async (req, res, next) => {
   try {
-    const { user } = req.headers;
+    const { id } = req.userInfo;
 
-    const currentUser = await User.findOne({ email: user });
+    const currentUser = await User.findById(id);
     const populatedUser = await User.populate(
       currentUser,
       { path: "friends.friendInfo" }
@@ -347,9 +368,9 @@ module.exports.getFriends = async (req, res, next) => {
 
 module.exports.getMyPosts = async (req, res, next) => {
   try {
-    const { useremail } = req.headers;
+    const { id } = req.userInfo;
     const populatedUser = await User
-      .findOne({ email: useremail })
+      .findById(id)
       .populate("posts");
 
     res.json({
