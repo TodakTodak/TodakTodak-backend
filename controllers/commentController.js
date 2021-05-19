@@ -8,12 +8,12 @@ const { SERVER_MESSAGE } = require("../constants/errorComment");
 
 module.exports.getComments = async (req, res, next) => {
   try {
-    const { useremail } = req.headers;
+    const { email } = req.userInfo;
 
     const fileredComment = await Comment.aggregate(
       [
         {
-          $match: { "user": useremail }
+          $match: { "user": email }
         }
       ]
     );
@@ -34,19 +34,25 @@ module.exports.getComments = async (req, res, next) => {
 
 module.exports.patchCommentLike = async (req, res, next) => {
   try {
-    const { user, commentId } = req.body;
+    const {
+      body: {
+        commentId
+      },
+      userInfo: {
+        email
+      }
+    } = req;
 
-    const targetUser = await User.findOne({ email: user }).lean();
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
-    const isLikedUser = commentLikeList.includes(targetUser.email);
+    const isLikedUser = commentLikeList.includes(email);
 
     if (isLikedUser) {
-      const removeIndex = commentLikeList.indexOf(targetUser.email);
+      const removeIndex = commentLikeList.indexOf(email);
 
       commentLikeList.splice(removeIndex, 1);
     } else {
-      commentLikeList.push(targetUser.email);
+      commentLikeList.push(email);
     }
 
     await targetComment.updateOne({

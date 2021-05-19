@@ -13,13 +13,17 @@ const {
 module.exports.postWorryPost = async (req, res, next) => {
   try {
     const {
-      postType,
-      anonymousType,
-      category,
-      worryContents,
-      postTitle,
-      user: { email }
-    } = req.body;
+      body: {
+        postType,
+        category,
+        postTitle,
+        worryContents,
+        anonymousType,
+      },
+      userInfo: {
+        id
+      }
+    } = req;
 
     const isPublic = postType === "Public" ? true : false;
     const isAnonymous = anonymousType === "anonymouns" ? true : false;
@@ -33,7 +37,7 @@ module.exports.postWorryPost = async (req, res, next) => {
       return next(createError(400, MISSING_CONTENT));
     }
 
-    const currentUser = await User.findOne({ email });
+    const currentUser = await User.findById(id);
     const newPost = await Post.create({
       title: postTitle,
       owner: currentUser.email,
@@ -119,18 +123,25 @@ module.exports.getCategoryPost = async (req, res, next) => {
 
 module.exports.patchPostLike = async (req, res, next) => {
   try {
-    const { user, postId } = req.body;
+    const {
+      body: {
+        postId
+      },
+      userInfo: {
+        email
+      }
+    } = req;
 
     const targetPost = await Post.findById(postId);
     let targetPostLikes = targetPost.likes;
-    const isLikedUser = targetPostLikes.includes(user);
+    const isLikedUser = targetPostLikes.includes(email);
 
     if (isLikedUser) {
-      const removeIndex = targetPostLikes.indexOf(user);
+      const removeIndex = targetPostLikes.indexOf(email);
 
       targetPostLikes.splice(removeIndex, 1);
     } else {
-      targetPostLikes.push(user);
+      targetPostLikes.push(email);
     }
 
     await targetPost.updateOne({
@@ -145,19 +156,26 @@ module.exports.patchPostLike = async (req, res, next) => {
 
 module.exports.patchPostCommentLike = async (req, res, next) => {
   try {
-    const { user, postId, commentId } = req.body;
+    const {
+      body: {
+        postId,
+        commentId
+      },
+      userInfo: {
+        email
+      }
+    } = req;
 
-    const targetUser = await User.findOne({ email: user }).lean();
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
-    const isLikedUser = commentLikeList.includes(targetUser.email);
+    const isLikedUser = commentLikeList.includes(email);
 
     if (isLikedUser) {
-      const removeIndex = commentLikeList.indexOf(targetUser.email);
+      const removeIndex = commentLikeList.indexOf(email);
 
       commentLikeList.splice(removeIndex, 1);
     } else {
-      commentLikeList.push(targetUser.email);
+      commentLikeList.push(email);
     }
 
     await targetComment.updateOne({
@@ -184,13 +202,21 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
 
 module.exports.patchPostComments = async (req, res, next) => {
   try {
-    const { user, postId, content } = req.body;
+    const {
+      body: {
+        postId,
+        content
+      },
+      userInfo: {
+        email
+      }
+    } = req;
 
     const currentPost = await Post.findById(postId);
     const newComment = await Comment.create({
       content,
       post: postId,
-      user: user.email
+      user: email
     });
 
     currentPost.comments.push(newComment._id);
@@ -259,7 +285,7 @@ module.exports.patchPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    next(createError(500 ,{ errorMessage: SERVER_ERROR }));
+    next(createError(500, SERVER_ERROR));
   }
 };
 
@@ -267,23 +293,24 @@ module.exports.deletePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
 
-    const targetPost = await Post.findById(postId).lean();
-    const postOwnerEmail = targetPost.owner;
-    const targetComments = targetPost.comments;
-    const targetPostId = targetPost._id;
-    const postOwner = await User.findOne({ email: postOwnerEmail });
+    const {
+      _id,
+      owner,
+      comments
+    } = await Post.findById(postId).lean();
+    const postOwner = await User.findOne({ email: owner });
     const ownerPosts = postOwner.posts;
 
     const deletedPosts = ownerPosts.filter((post) =>
-      String(post) !== String(targetPostId)
+      String(post) !== String(_id)
     );
 
     await postOwner.update({ "$set": { "posts": deletedPosts } });
     await Post.findByIdAndDelete(postId);
-    await Comment.deleteMany({ _id: { $in: targetComments } });
+    await Comment.deleteMany({ _id: { $in: comments } });
 
     const deletedPostUserInfo = await User
-      .findOne({ email: postOwnerEmail })
+      .findOne({ email: owner })
       .populate("posts")
       .lean();
 
