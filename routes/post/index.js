@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-const { authorizeUser } = require("../../middlewares/authorizeUser");
-
 const {
   patchPost,
   deletePost,
@@ -14,13 +12,13 @@ const {
   patchPostCommentLike
 } = require("../../controllers/postController");
 
-router.post("/", authorizeUser, postWorryPost);
-router.patch("/", authorizeUser, patchPost);
-router.patch("/like", authorizeUser, patchPostLike);
-router.patch("/comments", authorizeUser, patchPostComments);
-router.patch("/comments/like", authorizeUser, patchPostCommentLike);
-router.get("/category/:category", authorizeUser, getCategoryPost);
-router.get("/:postId", authorizeUser, getDetailPost);
-router.delete("/:postId", authorizeUser, deletePost);
+router.post("/", postWorryPost);
+router.patch("/", patchPost);
+router.patch("/like", patchPostLike);
+router.patch("/comments", patchPostComments);
+router.patch("/comments/like", patchPostCommentLike);
+router.get("/category/:category", getCategoryPost);
+router.get("/:postId", getDetailPost);
+router.delete("/:postId", deletePost);
 
 module.exports = router;
