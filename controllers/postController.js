@@ -97,6 +97,9 @@ module.exports.getCategoryPost = async (req, res, next) => {
             $match: { "isPublic": true }
           },
           {
+            $sort: { "_id": -1 }
+          },
+          {
             $skip: limit * page
           },
           {
@@ -208,15 +211,17 @@ module.exports.patchPostComments = async (req, res, next) => {
         content
       },
       userInfo: {
-        email
+        email,
+        nickname
       }
     } = req;
 
     const currentPost = await Post.findById(postId);
     const newComment = await Comment.create({
       content,
-      post: postId,
-      user: email
+      nickname,
+      user: email,
+      post: postId
     });
 
     currentPost.comments.push(newComment._id);

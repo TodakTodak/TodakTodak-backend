@@ -9,6 +9,10 @@ const Comment = new mongoose.Schema({
     type: String,
     required: true
   },
+  nickname: {
+    type: String,
+    required: true
+  },
   post: {
     type: mongoose.Types.ObjectId,
     ref: "Post"

@@ -1,10 +1,13 @@
 const Joi = require("joi");
 const createError = require("http-errors");
 
-module.exports.validateLoginInfo = (req, res, next) => {
+module.exports.validatePostInfo = (req, res, next) => {
   const schema = Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().min(8).required()
+    postType: Joi.string().required(),
+    category: Joi.string().required(),
+    postTitle: Joi.string().required(),
+    anonymousType: Joi.string().required(),
+    worryContents: Joi.string().required()
   });
 
   validateRequest(req, next, schema);
@@ -23,7 +26,6 @@ const validateRequest = (req, next, schema) => {
 
     next(createError(400, error.message));
   } else {
-    req.body = value;
     next();
   }
 };

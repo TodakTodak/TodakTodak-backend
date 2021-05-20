@@ -11,17 +11,21 @@ module.exports.authorizeUser = async (req, res, next) => {
   try {
     const token = req.get("authorization");
     const { userID } = jwt.verify(token, process.env.SECRET_TOKEN);
-    const { _id, email } = await User.findById(userID).lean();
+    const {
+      _id,
+      email,
+      nickname
+    } = await User.findById(userID).lean();
 
     if (!_id) {
       return next(createError(400, NOT_AUTHENICATED_INFO));
     }
 
-    req.userInfo = { email, id: _id };
+    req.userInfo = { email, id: _id, nickname };
 
     next();
   } catch (err) {
-    console.log(err.message);
+    console.error(err.message);
 
     next(createError(500, SERVER_MESSAGE));
   }

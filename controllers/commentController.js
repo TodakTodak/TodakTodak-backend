@@ -14,6 +14,9 @@ module.exports.getComments = async (req, res, next) => {
       [
         {
           $match: { "user": email }
+        },
+        {
+          $sort: { "_id": -1 }
         }
       ]
     );
@@ -42,7 +45,7 @@ module.exports.patchCommentLike = async (req, res, next) => {
         email
       }
     } = req;
-
+    console.log(commentId);
     const targetComment = await Comment.findById(commentId);
     let commentLikeList = targetComment.likes;
     const isLikedUser = commentLikeList.includes(email);

@@ -1,4 +1,5 @@
 const Joi = require("joi");
+const createError = require("http-errors");
 
 module.exports.validateSignupInfo = (req, res, next) => {
   const schema = Joi.object({
@@ -19,7 +20,9 @@ const validateRequest = (req, next, schema) => {
   const { error, value } = schema.validate(req.body, options);
 
   if (error) {
-    next(error.message);
+    console.error(error.message);
+
+    next(createError(400, error.message));
   } else {
     req.body = value;
     next();
