@@ -116,11 +116,7 @@ module.exports.getCategoryPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      categoryPosts: null,
-      highestLikesPost: null,
-      errorMessage: GET_POSTS_MESSAGE
-    }));
+    return next(createError(500, GET_POSTS_MESSAGE));
   }
 };
 
@@ -196,10 +192,7 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    next(createError(500, {
-      errorMessage: SERVER_ERROR,
-      populatedPost: null
-    }));
+    next(createError(500, SERVER_ERROR));
   }
 };
 
@@ -238,17 +231,14 @@ module.exports.patchPostComments = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    next(createError(500, {
-      errorMessage: SERVER_ERROR,
-      postComments: null
-    }));
+    next(createError(500, SERVER_ERROR));
   }
 };
 
 module.exports.getDetailPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const post = await Post.findById(postId).populate("comments");
+    const post = await Post.findById(postId);
 
     res.json({
       errMessage: null,
@@ -257,10 +247,7 @@ module.exports.getDetailPost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    next(createError(500, {
-      errorMessage: SERVER_ERROR,
-      post: null
-    }));
+    next(createError(500, SERVER_ERROR));
   }
 };
 
@@ -326,6 +313,22 @@ module.exports.deletePost = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    next(createError(500 ,{ errorMessage: SERVER_ERROR }));
+    next(createError(500, SERVER_ERROR));
+  }
+};
+
+module.exports.getpostComments = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const postInfo = await Post.findById(id).populate("comments").lean();
+
+    res.json({
+      errorMessage: null,
+      comments: postInfo.comments
+    });
+  } catch (err) {
+    console.error(err.message);
+
+    next(createError(500, SERVER_ERROR));
   }
 };

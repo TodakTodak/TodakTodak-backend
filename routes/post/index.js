@@ -10,6 +10,7 @@ const {
   postWorryPost,
   getDetailPost,
   getCategoryPost,
+  getpostComments,
   patchPostComments,
   patchPostCommentLike
 } = require("../../controllers/postController");
@@ -20,6 +21,7 @@ router.patch("/like", patchPostLike);
 router.patch("/comments", patchPostComments);
 router.patch("/comments/like", patchPostCommentLike);
 router.get("/category/:category", getCategoryPost);
+router.get("/comments/:id", getpostComments);
 router.get("/:postId", getDetailPost);
 router.delete("/:postId", deletePost);
 
