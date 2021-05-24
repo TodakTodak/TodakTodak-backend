@@ -1,7 +1,6 @@
 const createError = require("http-errors");
 
 const Post = require("../models/Post");
-const User = require("../models/User");
 const Comment = require("../models/Comment");
 
 const { SERVER_MESSAGE } = require("../constants/errorComment");
@@ -14,6 +13,9 @@ module.exports.getComments = async (req, res, next) => {
       [
         {
           $match: { "user": email }
+        },
+        {
+          $sort: { "_id": -1 }
         }
       ]
     );
@@ -25,10 +27,7 @@ module.exports.getComments = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      errorMessage: SERVER_MESSAGE,
-      comments: null
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -63,16 +62,21 @@ module.exports.patchCommentLike = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
 module.exports.patchComment = async (req, res, next) => {
   try {
     const {
-      comment,
-      commentId
-    } = req.body;
+      body: {
+        comment,
+        commentId
+      },
+      userInfo: {
+        email
+      }
+    } = req;
 
     const targetComment = await Comment.findById(commentId);
 
@@ -80,11 +84,25 @@ module.exports.patchComment = async (req, res, next) => {
       "$set": { content: comment }
     });
 
-    res.json({ errorMessage: null });
+    const fileredComment = await Comment.aggregate(
+      [
+        {
+          $match: { "user": email }
+        },
+        {
+          $sort: { "_id": -1 }
+        }
+      ]
+    );
+
+    res.json({
+      errorMessage: null,
+      comments: fileredComment
+    });
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -105,6 +123,9 @@ module.exports.deleteComment = async (req, res, next) => {
       [
         {
           $match: { "user": targetComment.user }
+        },
+        {
+          $sort: { "_id": -1 }
         }
       ]
     );
@@ -116,6 +137,6 @@ module.exports.deleteComment = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };

@@ -25,35 +25,27 @@ module.exports.postSignup = async (req, res, next) => {
       password === "" ||
       nickname === ""
     ) {
-      return next(createError(400, {
-        errorMessage: MISSING_MESSAGE
-      }));
+      return next(createError(400, MISSING_MESSAGE));
     }
 
     const existEamil = await User.findOne({ email }).lean();
 
     if (existEamil) {
-      return next(createError(400, {
-        errorMessage: EXIST_EMAIL
-      }));
+      return next(createError(400, EXIST_EMAIL));
     }
 
     bcrypt.genSalt(10, (err, salt) => {
       if (err) {
         console.error(err.message);
 
-        return next(createError(500, {
-          errorMessage: SERVER_MESSAGE
-        }));
+        return next(createError(500, SERVER_MESSAGE));
       }
 
       bcrypt.hash(password, salt, async (err, hash) => {
         if (err) {
           console.error(err.message);
 
-          return next(createError(500, {
-            errorMessage: SERVER_MESSAGE
-          }));
+          return next(createError(500, SERVER_MESSAGE));
         }
 
         password = hash;
@@ -74,9 +66,7 @@ module.exports.postSignup = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      errorMessage: SERVER_MESSAGE
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -87,11 +77,7 @@ module.exports.putLogin = async (req, res, next) => {
     const existUser = await User.findOne({ email }).lean();
 
     if (!existUser) {
-      return next(createError(403, {
-        token: null,
-        loginInfo: null,
-        errorMessage: NOT_EXIST_EMAIL
-      }));
+      return next(createError(403, NOT_EXIST_EMAIL));
     }
 
     const checkPassword = () => {
@@ -99,11 +85,7 @@ module.exports.putLogin = async (req, res, next) => {
         if (err) {
           console.error(err.message);
 
-          return next(createError(500, {
-            token: null,
-            loginInfo: null,
-            errorMessage: LOGIN_FAIL
-          }));
+          return next(createError(500, LOGIN_FAIL));
         }
 
         if (isMatch) {
@@ -124,11 +106,7 @@ module.exports.putLogin = async (req, res, next) => {
           });
         }
 
-        return next(createError(403, {
-          token: null,
-          loginInfo: null,
-          errorMessage: MISSING_PASSWORD
-        }));
+        return next(createError(403, MISSING_PASSWORD));
       });
     };
 
@@ -136,11 +114,7 @@ module.exports.putLogin = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      token: null,
-      loginInfo: null,
-      errorMessage: SERVER_MESSAGE
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -197,7 +171,8 @@ module.exports.addFriend = async (req, res, next) => {
     res.json({ errorMessage: null });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ errorMessage: SERVER_MESSAGE });
+
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -218,10 +193,7 @@ module.exports.getWaitingFrineds = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      errorMessage: SERVER_MESSAGE,
-      friends: null
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -286,7 +258,7 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -338,7 +310,7 @@ module.exports.patchRejectFriend = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, { errorMessage: SERVER_MESSAGE }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
@@ -359,19 +331,22 @@ module.exports.getFriends = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
 
-    return next(createError(500, {
-      errorMessage: SERVER_MESSAGE,
-      friends: null
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
 
 module.exports.getMyPosts = async (req, res, next) => {
   try {
     const { id } = req.userInfo;
+
     const populatedUser = await User
       .findById(id)
-      .populate("posts");
+      .populate(
+        {
+          path: "posts",
+          options: { sort: { "_id": -1 }}
+        }
+      );
 
     res.json({
       errorMessage: null,
@@ -381,9 +356,6 @@ module.exports.getMyPosts = async (req, res, next) => {
     console.error(err.message);
 
 
-    return next(createError(500, {
-      errorMessage: SERVER_MESSAGE,
-      postsInfo: null
-    }));
+    return next(createError(500, SERVER_MESSAGE));
   }
 };
