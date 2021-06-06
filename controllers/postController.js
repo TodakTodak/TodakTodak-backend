@@ -18,7 +18,7 @@ module.exports.postWorryPost = async (req, res, next) => {
         category,
         postTitle,
         worryContents,
-        anonymousType,
+        anonymousType
       },
       userInfo: {
         id
@@ -108,11 +108,11 @@ module.exports.getCategoryPost = async (req, res, next) => {
         ]
       );
 
-      res.json({
-        errorMessage: null,
-        highestLikesPost: bestPost,
-        categoryPosts: filteredPost
-      });
+    res.json({
+      errorMessage: null,
+      highestLikesPost: bestPost,
+      categoryPosts: filteredPost
+    });
   } catch (err) {
     console.error(err.message);
 
@@ -241,7 +241,7 @@ module.exports.getDetailPost = async (req, res, next) => {
     const post = await Post.findById(postId);
 
     res.json({
-      errMessage: null,
+      errorMessage: null,
       post
     });
   } catch (err) {
