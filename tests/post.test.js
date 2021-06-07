@@ -6,6 +6,18 @@ const request = supertest(app);
 const Post = require("../models/Post");
 const User = require("../models/User");
 
+const {
+  TEST_EMAIL,
+  TEST_NICKNAME,
+  TEST_PASSWORD,
+  TEST_POST_TYPE,
+  TEST_POST_TITLE,
+  TEST_POST_CONTENT,
+  TEST_POST_CATEGORY,
+  TEST_POST_ANONYMOUS,
+  TEST_UPDATE_POST_CATEGORY
+} = require("../constants/testInfomations");
+
 require("dotenv").config();
 
 describe("POST CRUD test", () => {
@@ -23,18 +35,18 @@ describe("POST CRUD test", () => {
       request
         .post("/auth")
         .send({
-          email: "test@test.com",
-          password: "test123456",
-          nickname: "testUser"
+          email: TEST_EMAIL,
+          password: TEST_PASSWORD,
+          nickname: TEST_NICKNAME
         })
         .end((err, res) => {
           if (err) return done(err);
           request
             .put("/auth")
             .send({
-              email: "test@test.com",
-              password: "test123456",
-              nickname: "testUser"
+              email: TEST_EMAIL,
+              password: TEST_PASSWORD,
+              nickname: TEST_NICKNAME
             })
             .end((err, res) => {
               if (err) return done(err);
@@ -55,11 +67,11 @@ describe("POST CRUD test", () => {
         .post("/post")
         .set({ "Authorization": accessToken })
         .send({
-          postType: "Public",
-          category: "고통",
-          postTitle: "test title",
-          worryContents: "test contents",
-          anonymousType: "nickname"
+          postType: TEST_POST_TYPE,
+          category: TEST_POST_CATEGORY,
+          postTitle: TEST_POST_TITLE,
+          worryContents: TEST_POST_CONTENT,
+          anonymousType: TEST_POST_ANONYMOUS
         })
         .expect(200)
         .end(async (err, res) => {
@@ -75,7 +87,7 @@ describe("POST CRUD test", () => {
 
   describe("GET /post/${postId}", () => {
     beforeEach(async () => {
-      const testPost = await Post.findOne({ title: "test title" }).lean();
+      const testPost = await Post.findOne({ title: TEST_POST_TITLE }).lean();
 
       postId = testPost._id;
     });
@@ -91,8 +103,8 @@ describe("POST CRUD test", () => {
           const { errorMessage, post } = res.body;
 
           expect(errorMessage).toBe(null);
-          expect(post.title).toBe("test title");
-          expect(post.category).toBe("고통");
+          expect(post.title).toBe(TEST_POST_TITLE);
+          expect(post.category).toBe(TEST_POST_CATEGORY);
           expect(post.isPublic).toBe(true);
           expect(post.isAnonymous).toBe(false);
           done();
@@ -107,11 +119,11 @@ describe("POST CRUD test", () => {
         .set({ "Authorization": accessToken })
         .send({
           postId,
-          postType: "Public",
-          category: "사랑",
-          postTitle: "test title",
-          worryContents: "test contents",
-          anonymousType: "nickname"
+          postType: TEST_POST_TYPE,
+          category: TEST_UPDATE_POST_CATEGORY,
+          postTitle: TEST_POST_TITLE,
+          worryContents: TEST_POST_CONTENT,
+          anonymousType: TEST_POST_ANONYMOUS
         })
         .expect(200)
         .end(async (err, res) => {
@@ -121,7 +133,7 @@ describe("POST CRUD test", () => {
           const updatedPost = await Post.findById(postId).lean();
 
           expect(errorMessage).toBe(null);
-          expect(updatedPost.category).toBe("사랑");
+          expect(updatedPost.category).toBe(TEST_UPDATE_POST_CATEGORY);
           done();
         });
     });
@@ -146,7 +158,7 @@ describe("POST CRUD test", () => {
   });
 
   afterAll(async () => {
-    await User.findOneAndDelete({ email: "test@test.com" });
+    await User.findOneAndDelete({ email: TEST_EMAIL });
     await mongoose.disconnect();
   });
 });

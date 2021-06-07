@@ -5,6 +5,12 @@ const app = require("../app");
 const request = supertest(app);
 const User = require("../models/User");
 
+const {
+  TEST_EMAIL,
+  TEST_NICKNAME,
+  TEST_PASSWORD
+} = require("../constants/testInfomations");
+
 require("dotenv").config();
 
 describe("user signup & login test", () => {
@@ -22,9 +28,9 @@ describe("user signup & login test", () => {
       request
         .post("/auth")
         .send({
-          email: "test@test.com",
-          password: "test123456",
-          nickname: "testUser"
+          email: TEST_EMAIL,
+          password: TEST_PASSWORD,
+          nickname: TEST_NICKNAME
         })
         .expect(201)
         .end((err, res) => {
@@ -45,8 +51,8 @@ describe("user signup & login test", () => {
       request
         .put("/auth")
         .send({
-          email: "test@test.com",
-          password: "test123456"
+          email: TEST_EMAIL,
+          password: TEST_PASSWORD
         })
         .expect(200)
         .end(async (err, res) => {
@@ -54,7 +60,7 @@ describe("user signup & login test", () => {
 
           const { errorMessage, loginInfo, token } = res.body;
 
-          await User.findOneAndDelete({ email: "test@test.com" });
+          await User.findOneAndDelete({ email: TEST_EMAIL });
 
           expect(errorMessage).toBe(null);
           expect(loginInfo).toBeTruthy();
