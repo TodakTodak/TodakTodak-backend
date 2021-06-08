@@ -30,8 +30,8 @@ module.exports.postWorryPost = async (req, res, next) => {
 
     if (
       !postType ||
-      !anonymousType ||
       !category ||
+      !anonymousType ||
       !worryContents
     ) {
       return next(createError(400, MISSING_CONTENT));
@@ -39,16 +39,17 @@ module.exports.postWorryPost = async (req, res, next) => {
 
     const currentUser = await User.findById(id);
     const newPost = await Post.create({
-      title: postTitle,
-      owner: currentUser.email,
-      ownerNickname: currentUser.nickname,
+      category,
       isPublic,
       isAnonymous,
+      title: postTitle,
       contents: worryContents,
-      category
+      owner: currentUser.email,
+      ownerNickname: currentUser.nickname
     });
 
     currentUser.posts.push(newPost._id);
+
     await currentUser.save();
 
     res.json({ errorMessage: null });
@@ -61,8 +62,8 @@ module.exports.postWorryPost = async (req, res, next) => {
 
 module.exports.getCategoryPost = async (req, res, next) => {
   try {
-    const { category } = req.params;
     const { page } = req.headers;
+    const { category } = req.params;
     const limit = 5;
 
     const filteredAllPost = await Post
@@ -183,7 +184,8 @@ module.exports.patchPostCommentLike = async (req, res, next) => {
 
     const populatedPost = await Post
       .findById(postId)
-      .populate("comments");
+      .populate("comments")
+      .lean();
 
     res.json({
       errorMessage: null,
@@ -222,7 +224,8 @@ module.exports.patchPostComments = async (req, res, next) => {
 
     const populatedPost = await Post
       .findById(postId)
-      .populate("comments");
+      .populate("comments")
+      .lean();
 
     res.json({
       errorMessage: null,
@@ -238,6 +241,7 @@ module.exports.patchPostComments = async (req, res, next) => {
 module.exports.getDetailPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
+
     const post = await Post.findById(postId);
 
     res.json({
@@ -291,6 +295,7 @@ module.exports.deletePost = async (req, res, next) => {
       comments
     } = await Post.findById(postId).lean();
     const postOwner = await User.findOne({ email: owner });
+
     const ownerPosts = postOwner.posts;
 
     const deletedPosts = ownerPosts.filter((post) =>
@@ -320,7 +325,10 @@ module.exports.deletePost = async (req, res, next) => {
 module.exports.getpostComments = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const postInfo = await Post.findById(id).populate("comments").lean();
+    const postInfo = await Post
+      .findById(id)
+      .populate("comments")
+      .lean();
 
     res.json({
       errorMessage: null,
