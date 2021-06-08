@@ -145,7 +145,8 @@ module.exports.addFriend = async (req, res, next) => {
     }
 
     const isAlreadyRequest = requestUserWaitingFriends.some((friend) =>
-      String(friend.friendInfo) === String(receivedUser._id));
+      String(friend.friendInfo) === String(receivedUser._id)
+    );
 
     if (isAlreadyRequest) {
       return next(createError(400, ALREADY_REQUEST_FRIEND));
@@ -163,7 +164,6 @@ module.exports.addFriend = async (req, res, next) => {
     await requestUser.updateOne({
       "$set": { "friendsWaitingList": requestUserWaitingFriends }
     });
-
     await receivedUser.updateOne({
       "$set": { "friendsWaitingList": receivedUserFWaitingriends }
     });
@@ -227,7 +227,6 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
       friendInfo: targetUser._id,
       chatRoomId: newChatRoom._id
     });
-
     targetUser.friends.push({
       friendInfo: currentUser._id,
       chatRoomId: newChatRoom._id
@@ -239,7 +238,6 @@ module.exports.patchAcceptFriend = async (req, res, next) => {
     await currentUser.update({
       "$set": { "friendsWaitingList": filterUserWaitingFriends }
     });
-
     await targetUser.update({
       "$set": { "friendsWaitingList": filterTargetWaitingFriends }
     });
@@ -293,7 +291,6 @@ module.exports.patchRejectFriend = async (req, res, next) => {
     await targetUser.updateOne({
       "$set": { "friendsWaitingList": filterTargetUserWaitingFriends }
     });
-
     await currentUser.updateOne({
       "$set": { "friendsWaitingList": filterUserWaitingFriends }
     });
@@ -354,7 +351,6 @@ module.exports.getMyPosts = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err.message);
-
 
     return next(createError(500, SERVER_MESSAGE));
   }

@@ -14,7 +14,7 @@ const {
   getWaitingFrineds,
   patchAcceptFriend,
   patchRejectFriend
-} = require("../../controllers/authController");
+} = require("../../controllers/userController");
 
 router.get("/posts", authorizeUser, getMyPosts);
 router.get("/friend", authorizeUser, getFriends);

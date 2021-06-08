@@ -29,15 +29,6 @@ const Comment = new mongoose.Schema({
       }
     ],
     default: []
-  },
-  reported: {
-    type: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "User"
-      }
-    ],
-    default: []
   }
 });
 

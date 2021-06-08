@@ -112,6 +112,7 @@ module.exports.deleteComment = async (req, res, next) => {
 
     const targetComment = await Comment.findById(commentId).lean();
     const CommentPost = await Post.findById(targetComment.post);
+
     const deletedPostComments = CommentPost.comments.filter((comment) =>
       String(comment) !== String(commentId)
     );

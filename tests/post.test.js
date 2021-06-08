@@ -41,6 +41,7 @@ describe("POST CRUD test", () => {
         })
         .end((err, res) => {
           if (err) return done(err);
+
           request
             .put("/auth")
             .send({
